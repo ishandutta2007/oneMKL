@@ -31,9 +31,9 @@
 #endif
 #include "allocator_helper.hpp"
 #include "cblas.h"
-#include "oneapi/mkl/detail/config.hpp"
-#include "oneapi/mkl.hpp"
-#include "onemkl_blas_helper.hpp"
+#include "oneapi/math/detail/config.hpp"
+#include "oneapi/math.hpp"
+#include "onemath_blas_helper.hpp"
 #include "reference_blas_templates.hpp"
 #include "test_common.hpp"
 #include "test_helper.hpp"
@@ -43,16 +43,16 @@
 using namespace sycl;
 using std::vector;
 
-extern std::vector<sycl::device *> devices;
+extern std::vector<sycl::device*> devices;
 
 namespace {
 
 template <typename fp>
-int test(device *dev, oneapi::mkl::layout layout, int64_t batch_size) {
+int test(device* dev, oneapi::math::layout layout, int64_t batch_size) {
     // Prepare data.
     int64_t m, n;
     int64_t lda, ldb, ldc;
-    oneapi::mkl::transpose transa, transb;
+    oneapi::math::transpose transa, transb;
     fp alpha, beta;
     int64_t i, tmp;
 
@@ -70,14 +70,14 @@ int test(device *dev, oneapi::mkl::layout layout, int64_t batch_size) {
     int64_t stride_a, stride_b, stride_c;
 
     switch (layout) {
-        case oneapi::mkl::layout::col_major:
-            stride_a = (transa == oneapi::mkl::transpose::nontrans) ? lda * n : lda * m;
-            stride_b = (transb == oneapi::mkl::transpose::nontrans) ? ldb * n : ldb * m;
+        case oneapi::math::layout::col_major:
+            stride_a = (transa == oneapi::math::transpose::nontrans) ? lda * n : lda * m;
+            stride_b = (transb == oneapi::math::transpose::nontrans) ? ldb * n : ldb * m;
             stride_c = ldc * n;
             break;
-        case oneapi::mkl::layout::row_major:
-            stride_a = (transa == oneapi::mkl::transpose::nontrans) ? lda * m : lda * n;
-            stride_b = (transb == oneapi::mkl::transpose::nontrans) ? ldb * m : ldb * n;
+        case oneapi::math::layout::row_major:
+            stride_a = (transa == oneapi::math::transpose::nontrans) ? lda * m : lda * n;
+            stride_b = (transb == oneapi::math::transpose::nontrans) ? ldb * m : ldb * n;
             stride_c = ldc * m;
             break;
         default: break;
@@ -86,13 +86,13 @@ int test(device *dev, oneapi::mkl::layout layout, int64_t batch_size) {
     vector<fp, allocator_helper<fp, 64>> A(stride_a * batch_size), B(stride_b * batch_size),
         C(stride_c * batch_size), C_ref(stride_c * batch_size);
 
-    rand_matrix(A.data(), oneapi::mkl::layout::col_major, oneapi::mkl::transpose::nontrans,
+    rand_matrix(A.data(), oneapi::math::layout::col_major, oneapi::math::transpose::nontrans,
                 stride_a * batch_size, 1, stride_a * batch_size);
-    rand_matrix(B.data(), oneapi::mkl::layout::col_major, oneapi::mkl::transpose::nontrans,
+    rand_matrix(B.data(), oneapi::math::layout::col_major, oneapi::math::transpose::nontrans,
                 stride_b * batch_size, 1, stride_b * batch_size);
-    rand_matrix(C.data(), oneapi::mkl::layout::col_major, oneapi::mkl::transpose::nontrans,
+    rand_matrix(C.data(), oneapi::math::layout::col_major, oneapi::math::transpose::nontrans,
                 stride_c * batch_size, 1, stride_c * batch_size);
-    copy_matrix(C.data(), oneapi::mkl::layout::col_major, oneapi::mkl::transpose::nontrans,
+    copy_matrix(C.data(), oneapi::math::layout::col_major, oneapi::math::transpose::nontrans,
                 stride_c * batch_size, 1, stride_c * batch_size, C_ref.data());
 
     // Call reference OMATADD_BATCH_STRIDE.
@@ -111,11 +111,11 @@ int test(device *dev, oneapi::mkl::layout layout, int64_t batch_size) {
 
     // Catch asynchronous exceptions.
     auto exception_handler = [](exception_list exceptions) {
-        for (std::exception_ptr const &e : exceptions) {
+        for (std::exception_ptr const& e : exceptions) {
             try {
                 std::rethrow_exception(e);
             }
-            catch (exception const &e) {
+            catch (exception const& e) {
                 std::cout << "Caught asynchronous SYCL exception during OMATADD_BATCH_STRIDE:\n"
                           << e.what() << std::endl;
                 print_error_code(e);
@@ -132,13 +132,13 @@ int test(device *dev, oneapi::mkl::layout layout, int64_t batch_size) {
     try {
 #ifdef CALL_RT_API
         switch (layout) {
-            case oneapi::mkl::layout::col_major:
-                oneapi::mkl::blas::column_major::omatadd_batch(
+            case oneapi::math::layout::col_major:
+                oneapi::math::blas::column_major::omatadd_batch(
                     main_queue, transa, transb, m, n, alpha, A_buffer, lda, stride_a, beta,
                     B_buffer, ldb, stride_b, C_buffer, ldc, stride_c, batch_size);
                 break;
-            case oneapi::mkl::layout::row_major:
-                oneapi::mkl::blas::row_major::omatadd_batch(
+            case oneapi::math::layout::row_major:
+                oneapi::math::blas::row_major::omatadd_batch(
                     main_queue, transa, transb, m, n, alpha, A_buffer, lda, stride_a, beta,
                     B_buffer, ldb, stride_b, C_buffer, ldc, stride_c, batch_size);
                 break;
@@ -146,14 +146,14 @@ int test(device *dev, oneapi::mkl::layout layout, int64_t batch_size) {
         }
 #else
         switch (layout) {
-            case oneapi::mkl::layout::col_major:
-                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::mkl::blas::column_major::omatadd_batch,
+            case oneapi::math::layout::col_major:
+                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::math::blas::column_major::omatadd_batch,
                                         transa, transb, m, n, alpha, A_buffer, lda, stride_a, beta,
                                         B_buffer, ldb, stride_b, C_buffer, ldc, stride_c,
                                         batch_size);
                 break;
-            case oneapi::mkl::layout::row_major:
-                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::mkl::blas::row_major::omatadd_batch,
+            case oneapi::math::layout::row_major:
+                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::math::blas::row_major::omatadd_batch,
                                         transa, transb, m, n, alpha, A_buffer, lda, stride_a, beta,
                                         B_buffer, ldb, stride_b, C_buffer, ldc, stride_c,
                                         batch_size);
@@ -162,32 +162,32 @@ int test(device *dev, oneapi::mkl::layout layout, int64_t batch_size) {
         }
 #endif
     }
-    catch (exception const &e) {
+    catch (exception const& e) {
         std::cout << "Caught synchronous SYCL exception during OMATADD_BATCH_STRIDE:\n"
                   << e.what() << std::endl;
         print_error_code(e);
     }
 
-    catch (const oneapi::mkl::unimplemented &e) {
+    catch (const oneapi::math::unimplemented& e) {
         return test_skipped;
     }
 
-    catch (const std::runtime_error &error) {
+    catch (const std::runtime_error& error) {
         std::cout << "Error raised during execution of OMATADD_BATCH_STRIDE:\n"
                   << error.what() << std::endl;
     }
 
     // Compare the results of reference implementation and DPC++ implementation.
 
-    auto C_accessor = C_buffer.template get_host_access(read_only);
-    bool good = check_equal_matrix(C_accessor, C_ref, oneapi::mkl::layout::col_major,
+    auto C_accessor = C_buffer.get_host_access(read_only);
+    bool good = check_equal_matrix(C_accessor, C_ref, oneapi::math::layout::col_major,
                                    stride_c * batch_size, 1, stride_c * batch_size, 10, std::cout);
 
     return (int)good;
 }
 
 class OmataddBatchStrideTests
-        : public ::testing::TestWithParam<std::tuple<sycl::device *, oneapi::mkl::layout>> {};
+        : public ::testing::TestWithParam<std::tuple<sycl::device*, oneapi::math::layout>> {};
 
 TEST_P(OmataddBatchStrideTests, RealSinglePrecision) {
     EXPECT_TRUEORSKIP(test<float>(std::get<0>(GetParam()), std::get<1>(GetParam()), 5));
@@ -213,8 +213,8 @@ TEST_P(OmataddBatchStrideTests, ComplexDoublePrecision) {
 
 INSTANTIATE_TEST_SUITE_P(OmataddBatchStrideTestSuite, OmataddBatchStrideTests,
                          ::testing::Combine(testing::ValuesIn(devices),
-                                            testing::Values(oneapi::mkl::layout::col_major,
-                                                            oneapi::mkl::layout::row_major)),
+                                            testing::Values(oneapi::math::layout::col_major,
+                                                            oneapi::math::layout::row_major)),
                          ::LayoutDeviceNamePrint());
 
 } // anonymous namespace

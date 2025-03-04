@@ -19,11 +19,11 @@
 #include "cublas_helper.hpp"
 #include "cublas_task.hpp"
 
-#include "oneapi/mkl/exceptions.hpp"
-#include "oneapi/mkl/blas/detail/cublas/onemkl_blas_cublas.hpp"
+#include "oneapi/math/exceptions.hpp"
+#include "oneapi/math/blas/detail/cublas/onemath_blas_cublas.hpp"
 
 namespace oneapi {
-namespace mkl {
+namespace math {
 namespace blas {
 namespace cublas {
 namespace column_major {
@@ -32,16 +32,16 @@ namespace column_major {
 
 // Level 1
 template <typename Func, typename T1, typename T2>
-inline void asum(const char *func_name, Func func, sycl::queue &queue, int64_t n,
-                 sycl::buffer<T1, 1> &x, const int64_t incx, sycl::buffer<T2, 1> &result) {
+inline void asum(const char* func_name, Func func, sycl::queue& queue, int64_t n,
+                 sycl::buffer<T1, 1>& x, const int64_t incx, sycl::buffer<T2, 1>& result) {
     using cuDataType1 = typename CudaEquivalentType<T1>::Type;
     using cuDataType2 = typename CudaEquivalentType<T2>::Type;
     overflow_check(n, incx);
 
-    queue.submit([&](sycl::handler &cgh) {
+    queue.submit([&](sycl::handler& cgh) {
         auto x_acc = x.template get_access<sycl::access::mode::read>(cgh);
         auto res_acc = result.template get_access<sycl::access::mode::write>(cgh);
-        onemkl_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler &sc) {
+        onemath_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler& sc) {
             auto handle = sc.get_handle(queue);
             // By default the pointer mode is the CUBLAS_POINTER_MODE_HOST
             // when the data is on buffer, it must be set to
@@ -49,11 +49,11 @@ inline void asum(const char *func_name, Func func, sycl::queue &queue, int64_t n
             // fault. When it is set to device it is users responsibility to
             // synchronise as the function is completely asynchronous.
             cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
-            auto x_ = sc.get_mem<cuDataType1 *>(x_acc);
-            auto res_ = sc.get_mem<cuDataType2 *>(res_acc);
+            auto x_ = sc.get_mem<cuDataType1*>(x_acc);
+            auto res_ = sc.get_mem<cuDataType2*>(res_acc);
             cublasStatus_t err;
             // ASUM does not support negative index
-            CUBLAS_ERROR_FUNC_T_SYNC(func_name, func, err, handle, n, x_, std::abs(incx), res_);
+            cublas_native_named_func(func_name, func, err, handle, n, x_, std::abs(incx), res_);
             // Higher level BLAS functions expect CUBLAS_POINTER_MODE_HOST
             // to be set, therfore we need to reset this to the default value
             // in order to avoid CUDA_ERROR_ILLEGAL_ADRESS errors
@@ -63,8 +63,8 @@ inline void asum(const char *func_name, Func func, sycl::queue &queue, int64_t n
 }
 
 #define ASUM_LAUNCHER(TYPE1, TYPE2, CUBLAS_ROUTINE)                                         \
-    void asum(sycl::queue &queue, int64_t n, sycl::buffer<TYPE1, 1> &x, const int64_t incx, \
-              sycl::buffer<TYPE2, 1> &result) {                                             \
+    void asum(sycl::queue& queue, int64_t n, sycl::buffer<TYPE1, 1>& x, const int64_t incx, \
+              sycl::buffer<TYPE2, 1>& result) {                                             \
         asum(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, result);                   \
     }
 ASUM_LAUNCHER(float, float, cublasSasum)
@@ -74,26 +74,26 @@ ASUM_LAUNCHER(std::complex<double>, double, cublasDzasum)
 #undef ASUM_LAUNCHER
 
 template <typename Func, typename T1, typename T2>
-inline void scal(const char *func_name, Func func, sycl::queue &queue, int64_t n, T1 a,
-                 sycl::buffer<T2, 1> &x, int64_t incx) {
+inline void scal(const char* func_name, Func func, sycl::queue& queue, int64_t n, T1 a,
+                 sycl::buffer<T2, 1>& x, int64_t incx) {
     using cuDataType1 = typename CudaEquivalentType<T1>::Type;
     using cuDataType2 = typename CudaEquivalentType<T2>::Type;
     overflow_check(n, incx);
-    queue.submit([&](sycl::handler &cgh) {
+    queue.submit([&](sycl::handler& cgh) {
         auto x_acc = x.template get_access<sycl::access::mode::read_write>(cgh);
-        onemkl_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler &sc) {
+        onemath_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler& sc) {
             auto handle = sc.get_handle(queue);
-            auto x_ = sc.get_mem<cuDataType2 *>(x_acc);
+            auto x_ = sc.get_mem<cuDataType2*>(x_acc);
             cublasStatus_t err;
             // SCAL does not support negative incx
-            CUBLAS_ERROR_FUNC_T_SYNC(func_name, func, err, handle, n, (cuDataType1 *)&a, x_,
+            cublas_native_named_func(func_name, func, err, handle, n, (cuDataType1*)&a, x_,
                                      std::abs(incx));
         });
     });
 }
 
 #define SCAL_LAUNCHER(TYPE1, TYPE2, CUBLAS_ROUTINE)                                              \
-    void scal(sycl::queue &queue, int64_t n, TYPE1 a, sycl::buffer<TYPE2, 1> &x, int64_t incx) { \
+    void scal(sycl::queue& queue, int64_t n, TYPE1 a, sycl::buffer<TYPE2, 1>& x, int64_t incx) { \
         scal(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, a, x, incx);                             \
     }
 SCAL_LAUNCHER(float, float, cublasSscal)
@@ -105,27 +105,27 @@ SCAL_LAUNCHER(double, std::complex<double>, cublasZdscal)
 #undef SCAL_LAUNCHER
 
 template <typename Func, typename T>
-inline void axpy(const char *func_name, Func func, sycl::queue &queue, int64_t n, T alpha,
-                 sycl::buffer<T, 1> &x, int64_t incx, sycl::buffer<T, 1> &y, int64_t incy) {
+inline void axpy(const char* func_name, Func func, sycl::queue& queue, int64_t n, T alpha,
+                 sycl::buffer<T, 1>& x, int64_t incx, sycl::buffer<T, 1>& y, int64_t incy) {
     using cuDataType = typename CudaEquivalentType<T>::Type;
     overflow_check(n, incx, incy);
-    queue.submit([&](sycl::handler &cgh) {
+    queue.submit([&](sycl::handler& cgh) {
         auto x_acc = x.template get_access<sycl::access::mode::read>(cgh);
         auto y_acc = y.template get_access<sycl::access::mode::read_write>(cgh);
-        onemkl_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler &sc) {
+        onemath_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler& sc) {
             auto handle = sc.get_handle(queue);
-            auto x_ = sc.get_mem<cuDataType *>(x_acc);
-            auto y_ = sc.get_mem<cuDataType *>(y_acc);
+            auto x_ = sc.get_mem<cuDataType*>(x_acc);
+            auto y_ = sc.get_mem<cuDataType*>(y_acc);
             cublasStatus_t err;
-            CUBLAS_ERROR_FUNC_T_SYNC(func_name, func, err, handle, n, (cuDataType *)&alpha, x_,
-                                     incx, y_, incy);
+            cublas_native_named_func(func_name, func, err, handle, n, (cuDataType*)&alpha, x_, incx,
+                                     y_, incy);
         });
     });
 }
 
 #define AXPY_LAUNCHER(TYPE, CUBLAS_ROUTINE)                                                      \
-    void axpy(sycl::queue &queue, int64_t n, TYPE alpha, sycl::buffer<TYPE, 1> &x, int64_t incx, \
-              sycl::buffer<TYPE, 1> &y, int64_t incy) {                                          \
+    void axpy(sycl::queue& queue, int64_t n, TYPE alpha, sycl::buffer<TYPE, 1>& x, int64_t incx, \
+              sycl::buffer<TYPE, 1>& y, int64_t incy) {                                          \
         axpy(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, alpha, x, incx, y, incy);                \
     }
 
@@ -135,39 +135,39 @@ AXPY_LAUNCHER(std::complex<float>, cublasCaxpy)
 AXPY_LAUNCHER(std::complex<double>, cublasZaxpy)
 #undef AXPY_LAUNCHER
 
-void axpby(sycl::queue &queue, int64_t n, float alpha, sycl::buffer<float, 1> &x, int64_t incx,
-           float beta, sycl::buffer<float, 1> &y, int64_t incy) {
+void axpby(sycl::queue& queue, int64_t n, float alpha, sycl::buffer<float, 1>& x, int64_t incx,
+           float beta, sycl::buffer<float, 1>& y, int64_t incy) {
     throw unimplemented("blas", "axpby", "for column_major layout");
 }
 
-void axpby(sycl::queue &queue, int64_t n, double alpha, sycl::buffer<double, 1> &x, int64_t incx,
-           double beta, sycl::buffer<double, 1> &y, int64_t incy) {
+void axpby(sycl::queue& queue, int64_t n, double alpha, sycl::buffer<double, 1>& x, int64_t incx,
+           double beta, sycl::buffer<double, 1>& y, int64_t incy) {
     throw unimplemented("blas", "axpby", "for column_major layout");
 }
 
-void axpby(sycl::queue &queue, int64_t n, std::complex<float> alpha,
-           sycl::buffer<std::complex<float>, 1> &x, int64_t incx, std::complex<float> beta,
-           sycl::buffer<std::complex<float>, 1> &y, int64_t incy) {
+void axpby(sycl::queue& queue, int64_t n, std::complex<float> alpha,
+           sycl::buffer<std::complex<float>, 1>& x, int64_t incx, std::complex<float> beta,
+           sycl::buffer<std::complex<float>, 1>& y, int64_t incy) {
     throw unimplemented("blas", "axpby", "for column_major layout");
 }
 
-void axpby(sycl::queue &queue, int64_t n, std::complex<double> alpha,
-           sycl::buffer<std::complex<double>, 1> &x, int64_t incx, std::complex<double> beta,
-           sycl::buffer<std::complex<double>, 1> &y, int64_t incy) {
+void axpby(sycl::queue& queue, int64_t n, std::complex<double> alpha,
+           sycl::buffer<std::complex<double>, 1>& x, int64_t incx, std::complex<double> beta,
+           sycl::buffer<std::complex<double>, 1>& y, int64_t incy) {
     throw unimplemented("blas", "axpby", "for column_major layout");
 }
 
 template <typename Func, typename T1, typename T2>
-inline void rotg(const char *func_name, Func func, sycl::queue &queue, sycl::buffer<T1, 1> &a,
-                 sycl::buffer<T1, 1> &b, sycl::buffer<T2, 1> &c, sycl::buffer<T1, 1> &s) {
+inline void rotg(const char* func_name, Func func, sycl::queue& queue, sycl::buffer<T1, 1>& a,
+                 sycl::buffer<T1, 1>& b, sycl::buffer<T2, 1>& c, sycl::buffer<T1, 1>& s) {
     using cuDataType1 = typename CudaEquivalentType<T1>::Type;
     using cuDataType2 = typename CudaEquivalentType<T2>::Type;
-    queue.submit([&](sycl::handler &cgh) {
+    queue.submit([&](sycl::handler& cgh) {
         auto a_acc = a.template get_access<sycl::access::mode::read_write>(cgh);
         auto b_acc = b.template get_access<sycl::access::mode::read_write>(cgh);
         auto c_acc = c.template get_access<sycl::access::mode::read_write>(cgh);
         auto s_acc = s.template get_access<sycl::access::mode::read_write>(cgh);
-        onemkl_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler &sc) {
+        onemath_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler& sc) {
             auto handle = sc.get_handle(queue);
             // By default the pointer mode is the CUBLAS_POINTER_MODE_HOST
             // when the data is on buffer, it must be set to
@@ -175,12 +175,12 @@ inline void rotg(const char *func_name, Func func, sycl::queue &queue, sycl::buf
             // fault. When it is set to device it is users responsibility to
             // synchronise as the function is completely asynchronous.
             cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
-            auto a_ = sc.get_mem<cuDataType1 *>(a_acc);
-            auto b_ = sc.get_mem<cuDataType1 *>(b_acc);
-            auto c_ = sc.get_mem<cuDataType2 *>(c_acc);
-            auto s_ = sc.get_mem<cuDataType1 *>(s_acc);
+            auto a_ = sc.get_mem<cuDataType1*>(a_acc);
+            auto b_ = sc.get_mem<cuDataType1*>(b_acc);
+            auto c_ = sc.get_mem<cuDataType2*>(c_acc);
+            auto s_ = sc.get_mem<cuDataType1*>(s_acc);
             cublasStatus_t err;
-            CUBLAS_ERROR_FUNC_T_SYNC(func_name, func, err, handle, a_, b_, c_, s_);
+            cublas_native_named_func(func_name, func, err, handle, a_, b_, c_, s_);
             // Higher level BLAS functions expect CUBLAS_POINTER_MODE_HOST
             // to be set, therfore we need to reset this to the default value
             // in order to avoid CUDA_ERROR_ILLEGAL_ADRESS errors
@@ -190,8 +190,8 @@ inline void rotg(const char *func_name, Func func, sycl::queue &queue, sycl::buf
 }
 
 #define ROTG_LAUNCHER(TYPE1, TYPE2, CUBLAS_ROUTINE)                                     \
-    void rotg(sycl::queue &queue, sycl::buffer<TYPE1, 1> &a, sycl::buffer<TYPE1, 1> &b, \
-              sycl::buffer<TYPE2, 1> &c, sycl::buffer<TYPE1, 1> &s) {                   \
+    void rotg(sycl::queue& queue, sycl::buffer<TYPE1, 1>& a, sycl::buffer<TYPE1, 1>& b, \
+              sycl::buffer<TYPE2, 1>& c, sycl::buffer<TYPE1, 1>& s) {                   \
         rotg(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, a, b, c, s);                       \
     }
 
@@ -202,16 +202,16 @@ ROTG_LAUNCHER(std::complex<double>, double, cublasZrotg)
 #undef ROTG_LAUNCHER
 
 template <typename Func, typename T>
-inline void rotm(const char *func_name, Func func, sycl::queue &queue, int64_t n,
-                 sycl::buffer<T, 1> &x, int64_t incx, sycl::buffer<T, 1> &y, int64_t incy,
-                 sycl::buffer<T, 1> &param) {
+inline void rotm(const char* func_name, Func func, sycl::queue& queue, int64_t n,
+                 sycl::buffer<T, 1>& x, int64_t incx, sycl::buffer<T, 1>& y, int64_t incy,
+                 sycl::buffer<T, 1>& param) {
     using cuDataType = typename CudaEquivalentType<T>::Type;
     overflow_check(n, incx, incy);
-    queue.submit([&](sycl::handler &cgh) {
+    queue.submit([&](sycl::handler& cgh) {
         auto x_acc = x.template get_access<sycl::access::mode::read_write>(cgh);
         auto y_acc = y.template get_access<sycl::access::mode::read_write>(cgh);
         auto param_acc = param.template get_access<sycl::access::mode::read>(cgh);
-        onemkl_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler &sc) {
+        onemath_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler& sc) {
             auto handle = sc.get_handle(queue);
             // By default the pointer mode is the CUBLAS_POINTER_MODE_HOST
             // when the data is on buffer, it must be set to
@@ -219,11 +219,11 @@ inline void rotm(const char *func_name, Func func, sycl::queue &queue, int64_t n
             // fault. When it is set to device it is users responsibility to
             // synchronise as the function is completely asynchronous.
             cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
-            auto x_ = sc.get_mem<cuDataType *>(x_acc);
-            auto y_ = sc.get_mem<cuDataType *>(y_acc);
-            auto param_ = sc.get_mem<cuDataType *>(param_acc);
+            auto x_ = sc.get_mem<cuDataType*>(x_acc);
+            auto y_ = sc.get_mem<cuDataType*>(y_acc);
+            auto param_ = sc.get_mem<cuDataType*>(param_acc);
             cublasStatus_t err;
-            CUBLAS_ERROR_FUNC_T_SYNC(func_name, func, err, handle, n, x_, incx, y_, incy, param_);
+            cublas_native_named_func(func_name, func, err, handle, n, x_, incx, y_, incy, param_);
             // Higher level BLAS functions expect CUBLAS_POINTER_MODE_HOST
             // to be set, therfore we need to reset this to the default value
             // in order to avoid CUDA_ERROR_ILLEGAL_ADRESS errors
@@ -233,8 +233,8 @@ inline void rotm(const char *func_name, Func func, sycl::queue &queue, int64_t n
 }
 
 #define ROTM_LAUNCHER(TYPE, CUBLAS_ROUTINE)                                           \
-    void rotm(sycl::queue &queue, int64_t n, sycl::buffer<TYPE, 1> &x, int64_t incx,  \
-              sycl::buffer<TYPE, 1> &y, int64_t incy, sycl::buffer<TYPE, 1> &param) { \
+    void rotm(sycl::queue& queue, int64_t n, sycl::buffer<TYPE, 1>& x, int64_t incx,  \
+              sycl::buffer<TYPE, 1>& y, int64_t incy, sycl::buffer<TYPE, 1>& param) { \
         rotm(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, y, incy, param);     \
     }
 
@@ -243,26 +243,26 @@ ROTM_LAUNCHER(double, cublasDrotm)
 #undef ROTM_LAUNCHER
 
 template <typename Func, typename T>
-inline void copy(const char *func_name, Func func, sycl::queue &queue, int64_t n,
-                 sycl::buffer<T, 1> &x, int64_t incx, sycl::buffer<T, 1> &y, int64_t incy) {
+inline void copy(const char* func_name, Func func, sycl::queue& queue, int64_t n,
+                 sycl::buffer<T, 1>& x, int64_t incx, sycl::buffer<T, 1>& y, int64_t incy) {
     using cuDataType = typename CudaEquivalentType<T>::Type;
     overflow_check(n, incx, incy);
-    queue.submit([&](sycl::handler &cgh) {
+    queue.submit([&](sycl::handler& cgh) {
         auto x_acc = x.template get_access<sycl::access::mode::read>(cgh);
         auto y_acc = y.template get_access<sycl::access::mode::read_write>(cgh);
-        onemkl_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler &sc) {
+        onemath_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler& sc) {
             auto handle = sc.get_handle(queue);
-            auto x_ = sc.get_mem<cuDataType *>(x_acc);
-            auto y_ = sc.get_mem<cuDataType *>(y_acc);
+            auto x_ = sc.get_mem<cuDataType*>(x_acc);
+            auto y_ = sc.get_mem<cuDataType*>(y_acc);
             cublasStatus_t err;
-            CUBLAS_ERROR_FUNC_T_SYNC(func_name, func, err, handle, n, x_, incx, y_, incy);
+            cublas_native_named_func(func_name, func, err, handle, n, x_, incx, y_, incy);
         });
     });
 }
 
 #define COPY_LAUNCHER(TYPE, CUBLAS_ROUTINE)                                          \
-    void copy(sycl::queue &queue, int64_t n, sycl::buffer<TYPE, 1> &x, int64_t incx, \
-              sycl::buffer<TYPE, 1> &y, int64_t incy) {                              \
+    void copy(sycl::queue& queue, int64_t n, sycl::buffer<TYPE, 1>& x, int64_t incx, \
+              sycl::buffer<TYPE, 1>& y, int64_t incy) {                              \
         copy(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, y, incy);           \
     }
 
@@ -273,16 +273,16 @@ COPY_LAUNCHER(std::complex<double>, cublasZcopy)
 #undef COPY_LAUNCHER
 
 template <typename Func, typename T>
-inline void dot(const char *func_name, Func func, sycl::queue &queue, int64_t n,
-                sycl::buffer<T, 1> &x, const int64_t incx, sycl::buffer<T, 1> &y, int64_t incy,
-                sycl::buffer<T, 1> &result) {
+inline void dot(const char* func_name, Func func, sycl::queue& queue, int64_t n,
+                sycl::buffer<T, 1>& x, const int64_t incx, sycl::buffer<T, 1>& y, int64_t incy,
+                sycl::buffer<T, 1>& result) {
     using cuDataType = typename CudaEquivalentType<T>::Type;
     overflow_check(n, incx, incy);
-    queue.submit([&](sycl::handler &cgh) {
+    queue.submit([&](sycl::handler& cgh) {
         auto x_acc = x.template get_access<sycl::access::mode::read>(cgh);
         auto y_acc = y.template get_access<sycl::access::mode::read>(cgh);
         auto res_acc = result.template get_access<sycl::access::mode::write>(cgh);
-        onemkl_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler &sc) {
+        onemath_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler& sc) {
             auto handle = sc.get_handle(queue);
             // By default the pointer mode is the CUBLAS_POINTER_MODE_HOST
             // when the data is on buffer, it must be set to
@@ -290,11 +290,11 @@ inline void dot(const char *func_name, Func func, sycl::queue &queue, int64_t n,
             // fault. When it is set to device it is users responsibility to
             // synchronise as the function is completely asynchronous.
             cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
-            auto x_ = sc.get_mem<cuDataType *>(x_acc);
-            auto y_ = sc.get_mem<cuDataType *>(y_acc);
-            auto res_ = sc.get_mem<cuDataType *>(res_acc);
+            auto x_ = sc.get_mem<cuDataType*>(x_acc);
+            auto y_ = sc.get_mem<cuDataType*>(y_acc);
+            auto res_ = sc.get_mem<cuDataType*>(res_acc);
             cublasStatus_t err;
-            CUBLAS_ERROR_FUNC_T_SYNC(func_name, func, err, handle, n, x_, incx, y_, incy, res_);
+            cublas_native_named_func(func_name, func, err, handle, n, x_, incx, y_, incy, res_);
             // Higher level BLAS functions expect CUBLAS_POINTER_MODE_HOST
             // to be set, therfore we need to reset this to the default value
             // in order to avoid CUDA_ERROR_ILLEGAL_ADRESS errors
@@ -304,8 +304,8 @@ inline void dot(const char *func_name, Func func, sycl::queue &queue, int64_t n,
 }
 
 #define DOT_LAUNCHER(EXT, TYPE, CUBLAS_ROUTINE)                                                  \
-    void dot##EXT(sycl::queue &queue, int64_t n, sycl::buffer<TYPE, 1> &x, const int64_t incx,   \
-                  sycl::buffer<TYPE, 1> &y, const int64_t incy, sycl::buffer<TYPE, 1> &result) { \
+    void dot##EXT(sycl::queue& queue, int64_t n, sycl::buffer<TYPE, 1>& x, const int64_t incx,   \
+                  sycl::buffer<TYPE, 1>& y, const int64_t incy, sycl::buffer<TYPE, 1>& result) { \
         dot(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, y, incy, result);                \
     }
 DOT_LAUNCHER(, float, cublasSdot)
@@ -317,17 +317,17 @@ DOT_LAUNCHER(u, std::complex<double>, cublasZdotu)
 #undef DOT_LAUNCHER
 
 template <typename Func, typename T1, typename T2, typename T3>
-inline void rot(const char *func_name, Func func, sycl::queue &queue, int64_t n,
-                sycl::buffer<T1, 1> &x, const int64_t incx, sycl::buffer<T1, 1> &y, int64_t incy,
+inline void rot(const char* func_name, Func func, sycl::queue& queue, int64_t n,
+                sycl::buffer<T1, 1>& x, const int64_t incx, sycl::buffer<T1, 1>& y, int64_t incy,
                 T2 c, T3 s) {
     using cuDataType1 = typename CudaEquivalentType<T1>::Type;
     using cuDataType2 = typename CudaEquivalentType<T2>::Type;
     using cuDataType3 = typename CudaEquivalentType<T3>::Type;
     overflow_check(n, incx, incy);
-    queue.submit([&](sycl::handler &cgh) {
+    queue.submit([&](sycl::handler& cgh) {
         auto x_acc = x.template get_access<sycl::access::mode::read_write>(cgh);
         auto y_acc = y.template get_access<sycl::access::mode::read_write>(cgh);
-        onemkl_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler &sc) {
+        onemath_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler& sc) {
             auto handle = sc.get_handle(queue);
             // By default the pointer mode is the CUBLAS_POINTER_MODE_HOST
             // when the data is on buffer, it must be set to
@@ -335,18 +335,18 @@ inline void rot(const char *func_name, Func func, sycl::queue &queue, int64_t n,
             // fault. When it is set to device it is users responsibility to
             // synchronise as the function is completely asynchronous.
             // cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
-            auto x_ = sc.get_mem<cuDataType1 *>(x_acc);
-            auto y_ = sc.get_mem<cuDataType1 *>(y_acc);
+            auto x_ = sc.get_mem<cuDataType1*>(x_acc);
+            auto y_ = sc.get_mem<cuDataType1*>(y_acc);
             cublasStatus_t err;
-            CUBLAS_ERROR_FUNC_T_SYNC(func_name, func, err, handle, n, x_, incx, y_, incy,
-                                     (cuDataType2 *)&c, (cuDataType3 *)&s);
+            cublas_native_named_func(func_name, func, err, handle, n, x_, incx, y_, incy,
+                                     (cuDataType2*)&c, (cuDataType3*)&s);
         });
     });
 }
 
 #define ROT_LAUNCHER(TYPE1, TYPE2, TYPE3, CUBLAS_ROUTINE)                                  \
-    void rot(sycl::queue &queue, int64_t n, sycl::buffer<TYPE1, 1> &x, const int64_t incx, \
-             sycl::buffer<TYPE1, 1> &y, int64_t incy, TYPE2 c, TYPE3 s) {                  \
+    void rot(sycl::queue& queue, int64_t n, sycl::buffer<TYPE1, 1>& x, const int64_t incx, \
+             sycl::buffer<TYPE1, 1>& y, int64_t incy, TYPE2 c, TYPE3 s) {                  \
         rot(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, y, incy, c, s);            \
     }
 
@@ -356,15 +356,15 @@ ROT_LAUNCHER(std::complex<float>, float, float, cublasCsrot)
 ROT_LAUNCHER(std::complex<double>, double, double, cublasZdrot)
 #undef ROT_LAUNCHER
 
-void sdsdot(sycl::queue &queue, int64_t n, float sb, sycl::buffer<float, 1> &x, int64_t incx,
-            sycl::buffer<float, 1> &y, int64_t incy, sycl::buffer<float, 1> &result) {
+void sdsdot(sycl::queue& queue, int64_t n, float sb, sycl::buffer<float, 1>& x, int64_t incx,
+            sycl::buffer<float, 1>& y, int64_t incy, sycl::buffer<float, 1>& result) {
     overflow_check(n, incx, incy);
     // cuBLAS does not support sdot so we need to mimic sdot.
-    queue.submit([&](sycl::handler &cgh) {
+    queue.submit([&](sycl::handler& cgh) {
         auto x_acc = x.get_access<sycl::access::mode::read>(cgh);
         auto y_acc = y.get_access<sycl::access::mode::read>(cgh);
         auto res_acc = result.get_access<sycl::access::mode::write>(cgh);
-        onemkl_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler &sc) {
+        onemath_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler& sc) {
             auto handle = sc.get_handle(queue);
             // By default the pointer mode is the CUBLAS_POINTER_MODE_HOST
             // when the data is on buffer, it must be set to
@@ -372,11 +372,11 @@ void sdsdot(sycl::queue &queue, int64_t n, float sb, sycl::buffer<float, 1> &x, 
             // fault. When it is set to device it is users responsibility to
             // synchronise as the function is completely asynchronous.
             cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
-            auto x_ = sc.get_mem<float *>(x_acc);
-            auto y_ = sc.get_mem<float *>(y_acc);
-            auto res_ = sc.get_mem<float *>(res_acc);
+            auto x_ = sc.get_mem<float*>(x_acc);
+            auto y_ = sc.get_mem<float*>(y_acc);
+            auto res_ = sc.get_mem<float*>(res_acc);
             cublasStatus_t err;
-            CUBLAS_ERROR_FUNC_SYNC(cublasSdot, err, handle, n, x_, incx, y_, incy, res_);
+            cublas_native_func(cublasSdot, err, handle, n, x_, incx, y_, incy, res_);
             // Higher level BLAS functions expect CUBLAS_POINTER_MODE_HOST
             // to be set, therfore we need to reset this to the default value
             // in order to avoid CUDA_ERROR_ILLEGAL_ADRESS errors
@@ -388,23 +388,23 @@ void sdsdot(sycl::queue &queue, int64_t n, float sb, sycl::buffer<float, 1> &x, 
     result.get_host_access(sycl::read_write)[0] += sb;
 }
 
-void dot(sycl::queue &queue, int64_t n, sycl::buffer<float, 1> &x, int64_t incx,
-         sycl::buffer<float, 1> &y, int64_t incy, sycl::buffer<double, 1> &result) {
+void dot(sycl::queue& queue, int64_t n, sycl::buffer<float, 1>& x, int64_t incx,
+         sycl::buffer<float, 1>& y, int64_t incy, sycl::buffer<double, 1>& result) {
     throw unimplemented("blas", "dot", "for column_major layout");
 }
 
 template <typename Func, typename T>
-inline void rotmg(const char *func_name, Func func, sycl::queue &queue, sycl::buffer<T, 1> &d1,
-                  sycl::buffer<T, 1> &d2, sycl::buffer<T, 1> &x1, T y1, sycl::buffer<T, 1> &param) {
+inline void rotmg(const char* func_name, Func func, sycl::queue& queue, sycl::buffer<T, 1>& d1,
+                  sycl::buffer<T, 1>& d2, sycl::buffer<T, 1>& x1, T y1, sycl::buffer<T, 1>& param) {
     using cuDataType = typename CudaEquivalentType<T>::Type;
     sycl::buffer<T, 1> y1_buff(&y1, sycl::range<1>(1));
-    queue.submit([&](sycl::handler &cgh) {
+    queue.submit([&](sycl::handler& cgh) {
         auto d1_acc = d1.template get_access<sycl::access::mode::read_write>(cgh);
         auto d2_acc = d2.template get_access<sycl::access::mode::read_write>(cgh);
         auto x1_acc = x1.template get_access<sycl::access::mode::read_write>(cgh);
         auto y1_acc = y1_buff.template get_access<sycl::access::mode::read>(cgh);
         auto param_acc = param.template get_access<sycl::access::mode::read_write>(cgh);
-        onemkl_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler &sc) {
+        onemath_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler& sc) {
             auto handle = sc.get_handle(queue);
             // By default the pointer mode is the CUBLAS_POINTER_MODE_HOST
             // when the data is on buffer, it must be set to
@@ -412,13 +412,13 @@ inline void rotmg(const char *func_name, Func func, sycl::queue &queue, sycl::bu
             // fault. When it is set to device it is users responsibility to
             // synchronise as the function is completely asynchronous.
             cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
-            auto d1_ = sc.get_mem<cuDataType *>(d1_acc);
-            auto d2_ = sc.get_mem<cuDataType *>(d2_acc);
-            auto x1_ = sc.get_mem<cuDataType *>(x1_acc);
-            auto y1_ = sc.get_mem<cuDataType *>(y1_acc);
-            auto param_ = sc.get_mem<cuDataType *>(param_acc);
+            auto d1_ = sc.get_mem<cuDataType*>(d1_acc);
+            auto d2_ = sc.get_mem<cuDataType*>(d2_acc);
+            auto x1_ = sc.get_mem<cuDataType*>(x1_acc);
+            auto y1_ = sc.get_mem<cuDataType*>(y1_acc);
+            auto param_ = sc.get_mem<cuDataType*>(param_acc);
             cublasStatus_t err;
-            CUBLAS_ERROR_FUNC_T_SYNC(func_name, func, err, handle, d1_, d2_, x1_, y1_, param_);
+            cublas_native_named_func(func_name, func, err, handle, d1_, d2_, x1_, y1_, param_);
             // Higher level BLAS functions expect CUBLAS_POINTER_MODE_HOST
             // to be set, therfore we need to reset this to the default value
             // in order to avoid CUDA_ERROR_ILLEGAL_ADRESS errors
@@ -428,8 +428,8 @@ inline void rotmg(const char *func_name, Func func, sycl::queue &queue, sycl::bu
 }
 
 #define ROTMG_LAUNCHER(TYPE, CUBLAS_ROUTINE)                                             \
-    void rotmg(sycl::queue &queue, sycl::buffer<TYPE, 1> &d1, sycl::buffer<TYPE, 1> &d2, \
-               sycl::buffer<TYPE, 1> &x1, TYPE y1, sycl::buffer<TYPE, 1> &param) {       \
+    void rotmg(sycl::queue& queue, sycl::buffer<TYPE, 1>& d1, sycl::buffer<TYPE, 1>& d2, \
+               sycl::buffer<TYPE, 1>& x1, TYPE y1, sycl::buffer<TYPE, 1>& param) {       \
         rotmg(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, d1, d2, x1, y1, param);            \
     }
 
@@ -438,8 +438,9 @@ ROTMG_LAUNCHER(double, cublasDrotmg)
 #undef ROTMG_LAUNCHER
 
 template <typename Func, typename T>
-inline void iamax(const char *func_name, Func func, sycl::queue &queue, int64_t n,
-                  sycl::buffer<T, 1> &x, const int64_t incx, sycl::buffer<int64_t, 1> &result) {
+inline void iamax(const char* func_name, Func func, sycl::queue& queue, int64_t n,
+                  sycl::buffer<T, 1>& x, const int64_t incx, sycl::buffer<int64_t, 1>& result,
+                  oneapi::math::index_base base) {
     using cuDataType = typename CudaEquivalentType<T>::Type;
     overflow_check(n, incx);
     // cuBLAS does not support int64_t as return type for the data. So we need to
@@ -450,10 +451,10 @@ inline void iamax(const char *func_name, Func func, sycl::queue &queue, int64_t 
     // to elementwise copy the data between two buffer, or allow reinterpret cast
     // to convert to different type with different typesize size.
     sycl::buffer<int, 1> int_res_buff{ sycl::range<1>(1) };
-    queue.submit([&](sycl::handler &cgh) {
+    queue.submit([&](sycl::handler& cgh) {
         auto x_acc = x.template get_access<sycl::access::mode::read>(cgh);
         auto int_res_acc = int_res_buff.template get_access<sycl::access::mode::write>(cgh);
-        onemkl_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler &sc) {
+        onemath_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler& sc) {
             auto handle = sc.get_handle(queue);
             // By default the pointer mode is the CUBLAS_POINTER_MODE_HOST
             // when the data is on buffer, it must be set to
@@ -461,12 +462,12 @@ inline void iamax(const char *func_name, Func func, sycl::queue &queue, int64_t 
             // fault. When it is set to device it is users responsibility to
             // synchronise as the function is completely asynchronous.
             cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
-            auto x_ = sc.get_mem<cuDataType *>(x_acc);
-            auto int_res_ = sc.get_mem<int *>(int_res_acc);
+            auto x_ = sc.get_mem<cuDataType*>(x_acc);
+            auto int_res_ = sc.get_mem<int*>(int_res_acc);
             cublasStatus_t err;
             // For negative incx, iamax returns 0. This behaviour is similar to that of
             // reference netlib BLAS.
-            CUBLAS_ERROR_FUNC_T_SYNC(func_name, func, err, handle, n, x_, incx, int_res_);
+            cublas_native_named_func(func_name, func, err, handle, n, x_, incx, int_res_);
             // Higher level BLAS functions expect CUBLAS_POINTER_MODE_HOST
             // to be set, therfore we need to reset this to the default value
             // in order to avoid CUDA_ERROR_ILLEGAL_ADRESS errors
@@ -474,18 +475,21 @@ inline void iamax(const char *func_name, Func func, sycl::queue &queue, int64_t 
         });
     });
 
-    queue.submit([&](sycl::handler &cgh) {
+    queue.submit([&](sycl::handler& cgh) {
         auto int_res_acc = int_res_buff.template get_access<sycl::access::mode::read>(cgh);
         auto result_acc = result.template get_access<sycl::access::mode::write>(cgh);
-        cgh.single_task(
-            [=]() { result_acc[0] = std::max((int64_t)int_res_acc[0] - 1, (int64_t)0); });
+        cgh.single_task([=]() {
+            result_acc[0] = std::max(
+                (int64_t)(int_res_acc[0] + (base == oneapi::math::index_base::zero ? -1 : 0)),
+                (int64_t)0);
+        });
     });
 }
 
 #define IAMAX_LAUNCHER(TYPE, CUBLAS_ROUTINE)                                                \
-    void iamax(sycl::queue &queue, int64_t n, sycl::buffer<TYPE, 1> &x, const int64_t incx, \
-               sycl::buffer<int64_t, 1> &result) {                                          \
-        iamax(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, result);                  \
+    void iamax(sycl::queue& queue, int64_t n, sycl::buffer<TYPE, 1>& x, const int64_t incx, \
+               sycl::buffer<int64_t, 1>& result, oneapi::math::index_base base) {           \
+        iamax(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, result, base);            \
     }
 IAMAX_LAUNCHER(float, cublasIsamax)
 IAMAX_LAUNCHER(double, cublasIdamax)
@@ -494,26 +498,26 @@ IAMAX_LAUNCHER(std::complex<double>, cublasIzamax)
 #undef IAMAX_LAUNCHER
 
 template <typename Func, typename T>
-inline void swap(const char *func_name, Func func, sycl::queue &queue, int64_t n,
-                 sycl::buffer<T, 1> &x, int64_t incx, sycl::buffer<T, 1> &y, int64_t incy) {
+inline void swap(const char* func_name, Func func, sycl::queue& queue, int64_t n,
+                 sycl::buffer<T, 1>& x, int64_t incx, sycl::buffer<T, 1>& y, int64_t incy) {
     using cuDataType = typename CudaEquivalentType<T>::Type;
     overflow_check(n, incx, incy);
-    queue.submit([&](sycl::handler &cgh) {
+    queue.submit([&](sycl::handler& cgh) {
         auto x_acc = x.template get_access<sycl::access::mode::read_write>(cgh);
         auto y_acc = y.template get_access<sycl::access::mode::read_write>(cgh);
-        onemkl_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler &sc) {
+        onemath_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler& sc) {
             auto handle = sc.get_handle(queue);
-            auto x_ = sc.get_mem<cuDataType *>(x_acc);
-            auto y_ = sc.get_mem<cuDataType *>(y_acc);
+            auto x_ = sc.get_mem<cuDataType*>(x_acc);
+            auto y_ = sc.get_mem<cuDataType*>(y_acc);
             cublasStatus_t err;
-            CUBLAS_ERROR_FUNC_T_SYNC(func_name, func, err, handle, n, x_, incx, y_, incy);
+            cublas_native_named_func(func_name, func, err, handle, n, x_, incx, y_, incy);
         });
     });
 }
 
 #define SWAP_LAUNCHER(TYPE, CUBLAS_ROUTINE)                                          \
-    void swap(sycl::queue &queue, int64_t n, sycl::buffer<TYPE, 1> &x, int64_t incx, \
-              sycl::buffer<TYPE, 1> &y, int64_t incy) {                              \
+    void swap(sycl::queue& queue, int64_t n, sycl::buffer<TYPE, 1>& x, int64_t incx, \
+              sycl::buffer<TYPE, 1>& y, int64_t incy) {                              \
         swap(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, y, incy);           \
     }
 
@@ -524,8 +528,9 @@ SWAP_LAUNCHER(std::complex<double>, cublasZswap)
 #undef SWAP_LAUNCHER
 
 template <typename Func, typename T>
-inline void iamin(const char *func_name, Func func, sycl::queue &queue, int64_t n,
-                  sycl::buffer<T, 1> &x, const int64_t incx, sycl::buffer<int64_t, 1> &result) {
+inline void iamin(const char* func_name, Func func, sycl::queue& queue, int64_t n,
+                  sycl::buffer<T, 1>& x, const int64_t incx, sycl::buffer<int64_t, 1>& result,
+                  oneapi::math::index_base base) {
     using cuDataType = typename CudaEquivalentType<T>::Type;
     overflow_check(n, incx);
     // cuBLAS does not support int64_t as return type for the data. So we need to
@@ -536,10 +541,10 @@ inline void iamin(const char *func_name, Func func, sycl::queue &queue, int64_t 
     // to elementwise copy the data between two buffer, or allow reinterpret cast
     // to convert to different type with different typesize size.
     sycl::buffer<int, 1> int_res_buff{ sycl::range<1>(1) };
-    queue.submit([&](sycl::handler &cgh) {
+    queue.submit([&](sycl::handler& cgh) {
         auto x_acc = x.template get_access<sycl::access::mode::read>(cgh);
         auto int_res_acc = int_res_buff.template get_access<sycl::access::mode::write>(cgh);
-        onemkl_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler &sc) {
+        onemath_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler& sc) {
             auto handle = sc.get_handle(queue);
             // By default the pointer mode is the CUBLAS_POINTER_MODE_HOST
             // when the data is on buffer, it must be set to
@@ -547,12 +552,12 @@ inline void iamin(const char *func_name, Func func, sycl::queue &queue, int64_t 
             // fault. When it is set to device it is users responsibility to
             // synchronise as the function is completely asynchronous.
             cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
-            auto x_ = sc.get_mem<cuDataType *>(x_acc);
-            auto int_res_ = sc.get_mem<int *>(int_res_acc);
+            auto x_ = sc.get_mem<cuDataType*>(x_acc);
+            auto int_res_ = sc.get_mem<int*>(int_res_acc);
             cublasStatus_t err;
             // For negative incx, iamin returns 0. This behaviour is similar to that of
             // implemented as a reference IAMIN.
-            CUBLAS_ERROR_FUNC_T_SYNC(func_name, func, err, handle, n, x_, incx, int_res_);
+            cublas_native_named_func(func_name, func, err, handle, n, x_, incx, int_res_);
             // Higher level BLAS functions expect CUBLAS_POINTER_MODE_HOST
             // to be set, therfore we need to reset this to the default value
             // in order to avoid CUDA_ERROR_ILLEGAL_ADRESS errors
@@ -560,18 +565,21 @@ inline void iamin(const char *func_name, Func func, sycl::queue &queue, int64_t 
         });
     });
 
-    queue.submit([&](sycl::handler &cgh) {
+    queue.submit([&](sycl::handler& cgh) {
         auto int_res_acc = int_res_buff.template get_access<sycl::access::mode::read>(cgh);
         auto result_acc = result.template get_access<sycl::access::mode::write>(cgh);
-        cgh.single_task(
-            [=]() { result_acc[0] = std::max((int64_t)int_res_acc[0] - 1, (int64_t)0); });
+        cgh.single_task([=]() {
+            result_acc[0] = std::max(
+                (int64_t)(int_res_acc[0] + (base == oneapi::math::index_base::zero ? -1 : 0)),
+                (int64_t)0);
+        });
     });
 }
 
 #define IAMIN_LAUNCHER(TYPE, CUBLAS_ROUTINE)                                                \
-    void iamin(sycl::queue &queue, int64_t n, sycl::buffer<TYPE, 1> &x, const int64_t incx, \
-               sycl::buffer<int64_t, 1> &result) {                                          \
-        iamin(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, result);                  \
+    void iamin(sycl::queue& queue, int64_t n, sycl::buffer<TYPE, 1>& x, const int64_t incx, \
+               sycl::buffer<int64_t, 1>& result, oneapi::math::index_base base) {           \
+        iamin(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, result, base);            \
     }
 IAMIN_LAUNCHER(float, cublasIsamin)
 IAMIN_LAUNCHER(double, cublasIdamin)
@@ -580,16 +588,16 @@ IAMIN_LAUNCHER(std::complex<double>, cublasIzamin)
 #undef IAMIN_LAUNCHER
 
 template <typename Func, typename T1, typename T2>
-inline void nrm2(const char *func_name, Func func, sycl::queue &queue, int64_t n,
-                 sycl::buffer<T1, 1> &x, const int64_t incx, sycl::buffer<T2, 1> &result) {
+inline void nrm2(const char* func_name, Func func, sycl::queue& queue, int64_t n,
+                 sycl::buffer<T1, 1>& x, const int64_t incx, sycl::buffer<T2, 1>& result) {
     using cuDataType1 = typename CudaEquivalentType<T1>::Type;
     using cuDataType2 = typename CudaEquivalentType<T2>::Type;
     overflow_check(n, incx);
 
-    queue.submit([&](sycl::handler &cgh) {
+    queue.submit([&](sycl::handler& cgh) {
         auto x_acc = x.template get_access<sycl::access::mode::read>(cgh);
         auto res_acc = result.template get_access<sycl::access::mode::write>(cgh);
-        onemkl_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler &sc) {
+        onemath_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler& sc) {
             auto handle = sc.get_handle(queue);
             // By default the pointer mode is the CUBLAS_POINTER_MODE_HOST
             // when the data is on buffer, it must be set to
@@ -597,11 +605,11 @@ inline void nrm2(const char *func_name, Func func, sycl::queue &queue, int64_t n
             // fault. When it is set to device it is users responsibility to
             // synchronise as the function is completely asynchronous.
             cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
-            auto x_ = sc.get_mem<cuDataType1 *>(x_acc);
-            auto res_ = sc.get_mem<cuDataType2 *>(res_acc);
+            auto x_ = sc.get_mem<cuDataType1*>(x_acc);
+            auto res_ = sc.get_mem<cuDataType2*>(res_acc);
             cublasStatus_t err;
             // NRM2 does not support negative index
-            CUBLAS_ERROR_FUNC_T_SYNC(func_name, func, err, handle, n, x_, std::abs(incx), res_);
+            cublas_native_named_func(func_name, func, err, handle, n, x_, std::abs(incx), res_);
             // Higher level BLAS functions expect CUBLAS_POINTER_MODE_HOST
             // to be set, therfore we need to reset this to the default value
             // in order to avoid CUDA_ERROR_ILLEGAL_ADRESS errors
@@ -611,8 +619,8 @@ inline void nrm2(const char *func_name, Func func, sycl::queue &queue, int64_t n
 }
 
 #define NRM2_LAUNCHER(TYPE1, TYPE2, CUBLAS_ROUTINE)                                         \
-    void nrm2(sycl::queue &queue, int64_t n, sycl::buffer<TYPE1, 1> &x, const int64_t incx, \
-              sycl::buffer<TYPE2, 1> &result) {                                             \
+    void nrm2(sycl::queue& queue, int64_t n, sycl::buffer<TYPE1, 1>& x, const int64_t incx, \
+              sycl::buffer<TYPE2, 1>& result) {                                             \
         nrm2(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, result);                   \
     }
 NRM2_LAUNCHER(float, float, cublasSnrm2)
@@ -625,30 +633,30 @@ NRM2_LAUNCHER(std::complex<double>, double, cublasDznrm2)
 
 // Level 1
 template <typename Func, typename T1, typename T2>
-inline sycl::event asum(const char *func_name, Func func, sycl::queue &queue, int64_t n,
-                        const T1 *x, const int64_t incx, T2 *result,
-                        const std::vector<sycl::event> &dependencies) {
+inline sycl::event asum(const char* func_name, Func func, sycl::queue& queue, int64_t n,
+                        const T1* x, const int64_t incx, T2* result,
+                        const std::vector<sycl::event>& dependencies) {
     using cuDataType1 = typename CudaEquivalentType<T1>::Type;
     using cuDataType2 = typename CudaEquivalentType<T2>::Type;
     overflow_check(n, incx);
 
     bool result_on_device =
         sycl::get_pointer_type(result, queue.get_context()) == sycl::usm::alloc::device;
-    auto done = queue.submit([&](sycl::handler &cgh) {
+    auto done = queue.submit([&](sycl::handler& cgh) {
         int64_t num_events = dependencies.size();
         for (int64_t i = 0; i < num_events; i++) {
             cgh.depends_on(dependencies[i]);
         }
-        onemkl_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler &sc) {
+        onemath_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler& sc) {
             auto handle = sc.get_handle(queue);
-            auto x_ = reinterpret_cast<const cuDataType1 *>(x);
-            auto res_ = reinterpret_cast<cuDataType2 *>(result);
+            auto x_ = reinterpret_cast<const cuDataType1*>(x);
+            auto res_ = reinterpret_cast<cuDataType2*>(result);
             if (result_on_device) {
                 cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
             }
             cublasStatus_t err;
             // ASUM does not support negative index
-            CUBLAS_ERROR_FUNC_T_SYNC(func_name, func, err, handle, n, x_, std::abs(incx), res_);
+            cublas_native_named_func(func_name, func, err, handle, n, x_, std::abs(incx), res_);
             if (result_on_device) {
                 cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_HOST);
             }
@@ -658,8 +666,8 @@ inline sycl::event asum(const char *func_name, Func func, sycl::queue &queue, in
 }
 
 #define ASUM_LAUNCHER_USM(TYPE1, TYPE2, CUBLAS_ROUTINE)                                        \
-    sycl::event asum(sycl::queue &queue, int64_t n, const TYPE1 *x, const int64_t incx,        \
-                     TYPE2 *result, const std::vector<sycl::event> &dependencies) {            \
+    sycl::event asum(sycl::queue& queue, int64_t n, const TYPE1* x, const int64_t incx,        \
+                     TYPE2* result, const std::vector<sycl::event>& dependencies) {            \
         return asum(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, result, dependencies); \
     }
 ASUM_LAUNCHER_USM(float, float, cublasSasum)
@@ -669,22 +677,22 @@ ASUM_LAUNCHER_USM(std::complex<double>, double, cublasDzasum)
 #undef ASUM_LAUNCHER_USM
 
 template <typename Func, typename T1, typename T2>
-inline sycl::event scal(const char *func_name, Func func, sycl::queue &queue, int64_t n, T1 a,
-                        T2 *x, int64_t incx, const std::vector<sycl::event> &dependencies) {
+inline sycl::event scal(const char* func_name, Func func, sycl::queue& queue, int64_t n, T1 a,
+                        T2* x, int64_t incx, const std::vector<sycl::event>& dependencies) {
     using cuDataType1 = typename CudaEquivalentType<T1>::Type;
     using cuDataType2 = typename CudaEquivalentType<T2>::Type;
     overflow_check(n, incx);
-    auto done = queue.submit([&](sycl::handler &cgh) {
+    auto done = queue.submit([&](sycl::handler& cgh) {
         int64_t num_events = dependencies.size();
         for (int64_t i = 0; i < num_events; i++) {
             cgh.depends_on(dependencies[i]);
         }
-        onemkl_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler &sc) {
+        onemath_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler& sc) {
             auto handle = sc.get_handle(queue);
-            auto x_ = reinterpret_cast<cuDataType2 *>(x);
+            auto x_ = reinterpret_cast<cuDataType2*>(x);
             cublasStatus_t err;
             // SCAL does not support negative incx
-            CUBLAS_ERROR_FUNC_T_SYNC(func_name, func, err, handle, n, (cuDataType1 *)&a, x_,
+            cublas_native_named_func(func_name, func, err, handle, n, (cuDataType1*)&a, x_,
                                      std::abs(incx));
         });
     });
@@ -692,8 +700,8 @@ inline sycl::event scal(const char *func_name, Func func, sycl::queue &queue, in
 }
 
 #define SCAL_LAUNCHER_USM(TYPE1, TYPE2, CUBLAS_ROUTINE)                                   \
-    sycl::event scal(sycl::queue &queue, int64_t n, TYPE1 a, TYPE2 *x, int64_t incx,      \
-                     const std::vector<sycl::event> &dependencies) {                      \
+    sycl::event scal(sycl::queue& queue, int64_t n, TYPE1 a, TYPE2* x, int64_t incx,      \
+                     const std::vector<sycl::event>& dependencies) {                      \
         return scal(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, a, x, incx, dependencies); \
     }
 SCAL_LAUNCHER_USM(float, float, cublasSscal)
@@ -705,31 +713,31 @@ SCAL_LAUNCHER_USM(double, std::complex<double>, cublasZdscal)
 #undef SCAL_LAUNCHER_USM
 
 template <typename Func, typename T>
-inline sycl::event axpy(const char *func_name, Func func, sycl::queue &queue, int64_t n, T alpha,
-                        const T *x, int64_t incx, T *y, int64_t incy,
-                        const std::vector<sycl::event> &dependencies) {
+inline sycl::event axpy(const char* func_name, Func func, sycl::queue& queue, int64_t n, T alpha,
+                        const T* x, int64_t incx, T* y, int64_t incy,
+                        const std::vector<sycl::event>& dependencies) {
     using cuDataType = typename CudaEquivalentType<T>::Type;
     overflow_check(n, incx, incy);
-    auto done = queue.submit([&](sycl::handler &cgh) {
+    auto done = queue.submit([&](sycl::handler& cgh) {
         int64_t num_events = dependencies.size();
         for (int64_t i = 0; i < num_events; i++) {
             cgh.depends_on(dependencies[i]);
         }
-        onemkl_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler &sc) {
+        onemath_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler& sc) {
             auto handle = sc.get_handle(queue);
-            auto x_ = reinterpret_cast<const cuDataType *>(x);
-            auto y_ = reinterpret_cast<cuDataType *>(y);
+            auto x_ = reinterpret_cast<const cuDataType*>(x);
+            auto y_ = reinterpret_cast<cuDataType*>(y);
             cublasStatus_t err;
-            CUBLAS_ERROR_FUNC_T_SYNC(func_name, func, err, handle, n, (cuDataType *)&alpha, x_,
-                                     incx, y_, incy);
+            cublas_native_named_func(func_name, func, err, handle, n, (cuDataType*)&alpha, x_, incx,
+                                     y_, incy);
         });
     });
     return done;
 }
 
 #define AXPY_LAUNCHER_USM(TYPE, CUBLAS_ROUTINE)                                              \
-    sycl::event axpy(sycl::queue &queue, int64_t n, TYPE alpha, const TYPE *x, int64_t incx, \
-                     TYPE *y, int64_t incy, const std::vector<sycl::event> &dependencies) {  \
+    sycl::event axpy(sycl::queue& queue, int64_t n, TYPE alpha, const TYPE* x, int64_t incx, \
+                     TYPE* y, int64_t incy, const std::vector<sycl::event>& dependencies) {  \
         return axpy(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, alpha, x, incx, y, incy,      \
                     dependencies);                                                           \
     }
@@ -740,32 +748,32 @@ AXPY_LAUNCHER_USM(std::complex<float>, cublasCaxpy)
 AXPY_LAUNCHER_USM(std::complex<double>, cublasZaxpy)
 #undef AXPY_LAUNCHER_USM
 
-sycl::event axpby(sycl::queue &queue, int64_t n, float alpha, const float *x, int64_t incx,
-                  float beta, float *y, int64_t incy,
-                  const std::vector<sycl::event> &dependencies) {
+sycl::event axpby(sycl::queue& queue, int64_t n, float alpha, const float* x, int64_t incx,
+                  float beta, float* y, int64_t incy,
+                  const std::vector<sycl::event>& dependencies) {
     throw unimplemented("blas", "axpby", "for column_major layout");
 }
-sycl::event axpby(sycl::queue &queue, int64_t n, double alpha, const double *x, int64_t incx,
-                  double beta, double *y, int64_t incy,
-                  const std::vector<sycl::event> &dependencies) {
+sycl::event axpby(sycl::queue& queue, int64_t n, double alpha, const double* x, int64_t incx,
+                  double beta, double* y, int64_t incy,
+                  const std::vector<sycl::event>& dependencies) {
     throw unimplemented("blas", "axpby", "for column_major layout");
 }
-sycl::event axpby(sycl::queue &queue, int64_t n, std::complex<float> alpha,
-                  const std::complex<float> *x, int64_t incx, std::complex<float> beta,
-                  std::complex<float> *y, int64_t incy,
-                  const std::vector<sycl::event> &dependencies) {
+sycl::event axpby(sycl::queue& queue, int64_t n, std::complex<float> alpha,
+                  const std::complex<float>* x, int64_t incx, std::complex<float> beta,
+                  std::complex<float>* y, int64_t incy,
+                  const std::vector<sycl::event>& dependencies) {
     throw unimplemented("blas", "axpby", "for column_major layout");
 }
-sycl::event axpby(sycl::queue &queue, int64_t n, std::complex<double> alpha,
-                  const std::complex<double> *x, int64_t incx, std::complex<double> beta,
-                  std::complex<double> *y, int64_t incy,
-                  const std::vector<sycl::event> &dependencies) {
+sycl::event axpby(sycl::queue& queue, int64_t n, std::complex<double> alpha,
+                  const std::complex<double>* x, int64_t incx, std::complex<double> beta,
+                  std::complex<double>* y, int64_t incy,
+                  const std::vector<sycl::event>& dependencies) {
     throw unimplemented("blas", "axpby", "for column_major layout");
 }
 
 template <typename Func, typename T1, typename T2>
-inline sycl::event rotg(const char *func_name, Func func, sycl::queue &queue, T1 *a, T1 *b, T2 *c,
-                        T1 *s, const std::vector<sycl::event> &dependencies) {
+inline sycl::event rotg(const char* func_name, Func func, sycl::queue& queue, T1* a, T1* b, T2* c,
+                        T1* s, const std::vector<sycl::event>& dependencies) {
     using cuDataType1 = typename CudaEquivalentType<T1>::Type;
     using cuDataType2 = typename CudaEquivalentType<T2>::Type;
     auto ctx = queue.get_context();
@@ -778,27 +786,27 @@ inline sycl::event rotg(const char *func_name, Func func, sycl::queue &queue, T1
             sycl::get_pointer_type(b, ctx) == sycl::usm::alloc::unknown ||
             sycl::get_pointer_type(c, ctx) == sycl::usm::alloc::unknown ||
             sycl::get_pointer_type(s, ctx) == sycl::usm::alloc::unknown) {
-            throw oneapi::mkl::exception(
+            throw oneapi::math::exception(
                 "blas", "rotg",
                 "If any pointer is only device accessible, all must be device accessible");
         }
     }
-    auto done = queue.submit([&](sycl::handler &cgh) {
+    auto done = queue.submit([&](sycl::handler& cgh) {
         int64_t num_events = dependencies.size();
         for (int64_t i = 0; i < num_events; i++) {
             cgh.depends_on(dependencies[i]);
         }
-        onemkl_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler &sc) {
+        onemath_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler& sc) {
             auto handle = sc.get_handle(queue);
-            auto a_ = reinterpret_cast<cuDataType1 *>(a);
-            auto b_ = reinterpret_cast<cuDataType1 *>(b);
-            auto c_ = reinterpret_cast<cuDataType2 *>(c);
-            auto s_ = reinterpret_cast<cuDataType1 *>(s);
+            auto a_ = reinterpret_cast<cuDataType1*>(a);
+            auto b_ = reinterpret_cast<cuDataType1*>(b);
+            auto c_ = reinterpret_cast<cuDataType2*>(c);
+            auto s_ = reinterpret_cast<cuDataType1*>(s);
             if (results_on_device) {
                 cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
             }
             cublasStatus_t err;
-            CUBLAS_ERROR_FUNC_T_SYNC(func_name, func, err, handle, a_, b_, c_, s_);
+            cublas_native_named_func(func_name, func, err, handle, a_, b_, c_, s_);
             if (results_on_device) {
                 cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_HOST);
             }
@@ -808,8 +816,8 @@ inline sycl::event rotg(const char *func_name, Func func, sycl::queue &queue, T1
 }
 
 #define ROTG_LAUNCHER_USM(TYPE1, TYPE2, CUBLAS_ROUTINE)                                \
-    sycl::event rotg(sycl::queue &queue, TYPE1 *a, TYPE1 *b, TYPE2 *c, TYPE1 *s,       \
-                     const std::vector<sycl::event> &dependencies) {                   \
+    sycl::event rotg(sycl::queue& queue, TYPE1* a, TYPE1* b, TYPE2* c, TYPE1* s,       \
+                     const std::vector<sycl::event>& dependencies) {                   \
         return rotg(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, a, b, c, s, dependencies); \
     }
 
@@ -820,31 +828,31 @@ ROTG_LAUNCHER_USM(std::complex<double>, double, cublasZrotg)
 #undef ROTG_LAUNCHER_USM
 
 template <typename Func, typename T>
-inline sycl::event rotm(const char *func_name, Func func, sycl::queue &queue, int64_t n, T *x,
-                        int64_t incx, T *y, int64_t incy, T *param,
-                        const std::vector<sycl::event> &dependencies) {
+inline sycl::event rotm(const char* func_name, Func func, sycl::queue& queue, int64_t n, T* x,
+                        int64_t incx, T* y, int64_t incy, T* param,
+                        const std::vector<sycl::event>& dependencies) {
     using cuDataType = typename CudaEquivalentType<T>::Type;
     overflow_check(n, incx, incy);
-    auto done = queue.submit([&](sycl::handler &cgh) {
+    auto done = queue.submit([&](sycl::handler& cgh) {
         int64_t num_events = dependencies.size();
         for (int64_t i = 0; i < num_events; i++) {
             cgh.depends_on(dependencies[i]);
         }
-        onemkl_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler &sc) {
+        onemath_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler& sc) {
             auto handle = sc.get_handle(queue);
-            auto x_ = reinterpret_cast<cuDataType *>(x);
-            auto y_ = reinterpret_cast<cuDataType *>(y);
-            auto param_ = reinterpret_cast<cuDataType *>(param);
+            auto x_ = reinterpret_cast<cuDataType*>(x);
+            auto y_ = reinterpret_cast<cuDataType*>(y);
+            auto param_ = reinterpret_cast<cuDataType*>(param);
             cublasStatus_t err;
-            CUBLAS_ERROR_FUNC_T_SYNC(func_name, func, err, handle, n, x_, incx, y_, incy, param_);
+            cublas_native_named_func(func_name, func, err, handle, n, x_, incx, y_, incy, param_);
         });
     });
     return done;
 }
 
 #define ROTM_LAUNCHER_USM(TYPE, CUBLAS_ROUTINE)                                                   \
-    sycl::event rotm(sycl::queue &queue, int64_t n, TYPE *x, int64_t incx, TYPE *y, int64_t incy, \
-                     TYPE *param, const std::vector<sycl::event> &dependencies) {                 \
+    sycl::event rotm(sycl::queue& queue, int64_t n, TYPE* x, int64_t incx, TYPE* y, int64_t incy, \
+                     TYPE* param, const std::vector<sycl::event>& dependencies) {                 \
         return rotm(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, y, incy, param,           \
                     dependencies);                                                                \
     }
@@ -854,30 +862,30 @@ ROTM_LAUNCHER_USM(double, cublasDrotm)
 #undef ROTM_LAUNCHER_USM
 
 template <typename Func, typename T>
-inline sycl::event copy(const char *func_name, Func func, sycl::queue &queue, int64_t n, const T *x,
-                        int64_t incx, T *y, int64_t incy,
-                        const std::vector<sycl::event> &dependencies) {
+inline sycl::event copy(const char* func_name, Func func, sycl::queue& queue, int64_t n, const T* x,
+                        int64_t incx, T* y, int64_t incy,
+                        const std::vector<sycl::event>& dependencies) {
     using cuDataType = typename CudaEquivalentType<T>::Type;
     overflow_check(n, incx, incy);
-    auto done = queue.submit([&](sycl::handler &cgh) {
+    auto done = queue.submit([&](sycl::handler& cgh) {
         int64_t num_events = dependencies.size();
         for (int64_t i = 0; i < num_events; i++) {
             cgh.depends_on(dependencies[i]);
         }
-        onemkl_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler &sc) {
+        onemath_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler& sc) {
             auto handle = sc.get_handle(queue);
-            auto x_ = reinterpret_cast<const cuDataType *>(x);
-            auto y_ = reinterpret_cast<cuDataType *>(y);
+            auto x_ = reinterpret_cast<const cuDataType*>(x);
+            auto y_ = reinterpret_cast<cuDataType*>(y);
             cublasStatus_t err;
-            CUBLAS_ERROR_FUNC_T_SYNC(func_name, func, err, handle, n, x_, incx, y_, incy);
+            cublas_native_named_func(func_name, func, err, handle, n, x_, incx, y_, incy);
         });
     });
     return done;
 }
 
 #define COPY_LAUNCHER_USM(TYPE, CUBLAS_ROUTINE)                                                 \
-    sycl::event copy(sycl::queue &queue, int64_t n, const TYPE *x, int64_t incx, TYPE *y,       \
-                     int64_t incy, const std::vector<sycl::event> &dependencies) {              \
+    sycl::event copy(sycl::queue& queue, int64_t n, const TYPE* x, int64_t incx, TYPE* y,       \
+                     int64_t incy, const std::vector<sycl::event>& dependencies) {              \
         return copy(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, y, incy, dependencies); \
     }
 
@@ -888,28 +896,28 @@ COPY_LAUNCHER_USM(std::complex<double>, cublasZcopy)
 #undef COPY_LAUNCHER_USM
 
 template <typename Func, typename T>
-inline sycl::event dot(const char *func_name, Func func, sycl::queue &queue, int64_t n, const T *x,
-                       const int64_t incx, const T *y, int64_t incy, T *result,
-                       const std::vector<sycl::event> &dependencies) {
+inline sycl::event dot(const char* func_name, Func func, sycl::queue& queue, int64_t n, const T* x,
+                       const int64_t incx, const T* y, int64_t incy, T* result,
+                       const std::vector<sycl::event>& dependencies) {
     using cuDataType = typename CudaEquivalentType<T>::Type;
     overflow_check(n, incx, incy);
     bool result_on_device =
         sycl::get_pointer_type(result, queue.get_context()) == sycl::usm::alloc::device;
-    auto done = queue.submit([&](sycl::handler &cgh) {
+    auto done = queue.submit([&](sycl::handler& cgh) {
         int64_t num_events = dependencies.size();
         for (int64_t i = 0; i < num_events; i++) {
             cgh.depends_on(dependencies[i]);
         }
-        onemkl_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler &sc) {
+        onemath_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler& sc) {
             auto handle = sc.get_handle(queue);
-            auto x_ = reinterpret_cast<const cuDataType *>(x);
-            auto y_ = reinterpret_cast<const cuDataType *>(y);
-            auto res_ = reinterpret_cast<cuDataType *>(result);
+            auto x_ = reinterpret_cast<const cuDataType*>(x);
+            auto y_ = reinterpret_cast<const cuDataType*>(y);
+            auto res_ = reinterpret_cast<cuDataType*>(result);
             if (result_on_device) {
                 cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
             }
             cublasStatus_t err;
-            CUBLAS_ERROR_FUNC_T_SYNC(func_name, func, err, handle, n, x_, incx, y_, incy, res_);
+            cublas_native_named_func(func_name, func, err, handle, n, x_, incx, y_, incy, res_);
             if (result_on_device) {
                 cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_HOST);
             }
@@ -919,9 +927,9 @@ inline sycl::event dot(const char *func_name, Func func, sycl::queue &queue, int
 }
 
 #define DOT_LAUNCHER_USM(EXT, TYPE, CUBLAS_ROUTINE)                                        \
-    sycl::event dot##EXT(sycl::queue &queue, int64_t n, const TYPE *x, const int64_t incx, \
-                         const TYPE *y, const int64_t incy, TYPE *result,                  \
-                         const std::vector<sycl::event> &dependencies) {                   \
+    sycl::event dot##EXT(sycl::queue& queue, int64_t n, const TYPE* x, const int64_t incx, \
+                         const TYPE* y, const int64_t incy, TYPE* result,                  \
+                         const std::vector<sycl::event>& dependencies) {                   \
         return dot(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, y, incy, result,    \
                    dependencies);                                                          \
     }
@@ -934,34 +942,34 @@ DOT_LAUNCHER_USM(u, std::complex<double>, cublasZdotu)
 #undef DOT_LAUNCHER_USM
 
 template <typename Func, typename T1, typename T2, typename T3>
-inline sycl::event rot(const char *func_name, Func func, sycl::queue &queue, int64_t n, T1 *x,
-                       const int64_t incx, T1 *y, int64_t incy, T2 c, T3 s,
-                       const std::vector<sycl::event> &dependencies) {
+inline sycl::event rot(const char* func_name, Func func, sycl::queue& queue, int64_t n, T1* x,
+                       const int64_t incx, T1* y, int64_t incy, T2 c, T3 s,
+                       const std::vector<sycl::event>& dependencies) {
     using cuDataType1 = typename CudaEquivalentType<T1>::Type;
     using cuDataType2 = typename CudaEquivalentType<T2>::Type;
     using cuDataType3 = typename CudaEquivalentType<T3>::Type;
     overflow_check(n, incx, incy);
-    auto done = queue.submit([&](sycl::handler &cgh) {
+    auto done = queue.submit([&](sycl::handler& cgh) {
         int64_t num_events = dependencies.size();
         for (int64_t i = 0; i < num_events; i++) {
             cgh.depends_on(dependencies[i]);
         }
-        onemkl_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler &sc) {
+        onemath_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler& sc) {
             auto handle = sc.get_handle(queue);
-            auto x_ = reinterpret_cast<cuDataType1 *>(x);
-            auto y_ = reinterpret_cast<cuDataType1 *>(y);
+            auto x_ = reinterpret_cast<cuDataType1*>(x);
+            auto y_ = reinterpret_cast<cuDataType1*>(y);
             cublasStatus_t err;
-            CUBLAS_ERROR_FUNC_T_SYNC(func_name, func, err, handle, n, x_, incx, y_, incy,
-                                     (cuDataType2 *)&c, (cuDataType3 *)&s);
+            cublas_native_named_func(func_name, func, err, handle, n, x_, incx, y_, incy,
+                                     (cuDataType2*)&c, (cuDataType3*)&s);
         });
     });
     return done;
 }
 
 #define ROT_LAUNCHER_USM(TYPE1, TYPE2, TYPE3, CUBLAS_ROUTINE)                              \
-    sycl::event rot(sycl::queue &queue, int64_t n, TYPE1 *x, const int64_t incx, TYPE1 *y, \
+    sycl::event rot(sycl::queue& queue, int64_t n, TYPE1* x, const int64_t incx, TYPE1* y, \
                     int64_t incy, TYPE2 c, TYPE3 s,                                        \
-                    const std::vector<sycl::event> &dependencies) {                        \
+                    const std::vector<sycl::event>& dependencies) {                        \
         return rot(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, y, incy, c, s,      \
                    dependencies);                                                          \
     }
@@ -972,28 +980,28 @@ ROT_LAUNCHER_USM(std::complex<float>, float, float, cublasCsrot)
 ROT_LAUNCHER_USM(std::complex<double>, double, double, cublasZdrot)
 #undef ROT_LAUNCHER_USM
 
-sycl::event sdsdot(sycl::queue &queue, int64_t n, float sb, const float *x, int64_t incx,
-                   const float *y, int64_t incy, float *result,
-                   const std::vector<sycl::event> &dependencies) {
+sycl::event sdsdot(sycl::queue& queue, int64_t n, float sb, const float* x, int64_t incx,
+                   const float* y, int64_t incy, float* result,
+                   const std::vector<sycl::event>& dependencies) {
     overflow_check(n, incx, incy);
     bool result_on_device =
         sycl::get_pointer_type(result, queue.get_context()) == sycl::usm::alloc::device;
     // cuBLAS does not support sdsdot so we need to mimic sdot.
-    auto done = queue.submit([&](sycl::handler &cgh) {
+    auto done = queue.submit([&](sycl::handler& cgh) {
         int64_t num_events = dependencies.size();
         for (int64_t i = 0; i < num_events; i++) {
             cgh.depends_on(dependencies[i]);
         }
-        onemkl_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler &sc) {
+        onemath_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler& sc) {
             auto handle = sc.get_handle(queue);
-            auto x_ = reinterpret_cast<const float *>(x);
-            auto y_ = reinterpret_cast<const float *>(y);
-            auto res_ = reinterpret_cast<float *>(result);
+            auto x_ = reinterpret_cast<const float*>(x);
+            auto y_ = reinterpret_cast<const float*>(y);
+            auto res_ = reinterpret_cast<float*>(result);
             if (result_on_device) {
                 cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
             }
             cublasStatus_t err;
-            CUBLAS_ERROR_FUNC_SYNC(cublasSdot, err, handle, n, x_, incx, y_, incy, res_);
+            cublas_native_func(cublasSdot, err, handle, n, x_, incx, y_, incy, res_);
             if (result_on_device) {
                 cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_HOST);
             }
@@ -1017,14 +1025,14 @@ sycl::event sdsdot(sycl::queue &queue, int64_t n, float sb, const float *x, int6
     }
 }
 
-sycl::event dot(sycl::queue &queue, int64_t n, const float *x, int64_t incx, const float *y,
-                int64_t incy, double *result, const std::vector<sycl::event> &dependencies) {
+sycl::event dot(sycl::queue& queue, int64_t n, const float* x, int64_t incx, const float* y,
+                int64_t incy, double* result, const std::vector<sycl::event>& dependencies) {
     throw unimplemented("blas", "dot", "for column_major layout");
 }
 
 template <typename Func, typename T>
-inline sycl::event rotmg(const char *func_name, Func func, sycl::queue &queue, T *d1, T *d2, T *x1,
-                         T y1, T *param, const std::vector<sycl::event> &dependencies) {
+inline sycl::event rotmg(const char* func_name, Func func, sycl::queue& queue, T* d1, T* d2, T* x1,
+                         T y1, T* param, const std::vector<sycl::event>& dependencies) {
     using cuDataType = typename CudaEquivalentType<T>::Type;
     auto ctx = queue.get_context();
     bool results_on_device = (sycl::get_pointer_type(d1, ctx) == sycl::usm::alloc::device ||
@@ -1034,36 +1042,36 @@ inline sycl::event rotmg(const char *func_name, Func func, sycl::queue &queue, T
         if (sycl::get_pointer_type(d1, ctx) == sycl::usm::alloc::unknown ||
             sycl::get_pointer_type(d2, ctx) == sycl::usm::alloc::unknown ||
             sycl::get_pointer_type(x1, ctx) == sycl::usm::alloc::unknown) {
-            throw oneapi::mkl::exception(
+            throw oneapi::math::exception(
                 "blas", "rotmg",
                 "If any pointer is only device accessible, all must be device accessible");
         }
     }
-    cuDataType *y1_;
+    cuDataType* y1_;
     if (results_on_device) {
         y1_ = sycl::malloc_device<cuDataType>(1, queue);
         queue.memcpy(y1_, &y1, sizeof(cuDataType)).wait();
     }
-    auto done = queue.submit([&](sycl::handler &cgh) {
+    auto done = queue.submit([&](sycl::handler& cgh) {
         int64_t num_events = dependencies.size();
         for (int64_t i = 0; i < num_events; i++) {
             cgh.depends_on(dependencies[i]);
         }
-        onemkl_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler &sc) {
+        onemath_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler& sc) {
             auto handle = sc.get_handle(queue);
-            auto d1_ = reinterpret_cast<cuDataType *>(d1);
-            auto d2_ = reinterpret_cast<cuDataType *>(d2);
-            auto x1_ = reinterpret_cast<cuDataType *>(x1);
-            auto param_ = reinterpret_cast<cuDataType *>(param);
+            auto d1_ = reinterpret_cast<cuDataType*>(d1);
+            auto d2_ = reinterpret_cast<cuDataType*>(d2);
+            auto x1_ = reinterpret_cast<cuDataType*>(x1);
+            auto param_ = reinterpret_cast<cuDataType*>(param);
             cublasStatus_t err;
             if (results_on_device) {
                 cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
-                CUBLAS_ERROR_FUNC_T_SYNC(func_name, func, err, handle, d1_, d2_, x1_, y1_, param_);
+                cublas_native_named_func(func_name, func, err, handle, d1_, d2_, x1_, y1_, param_);
                 cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_HOST);
             }
             else {
-                auto y1_c = reinterpret_cast<const cuDataType *>(&y1);
-                CUBLAS_ERROR_FUNC_T_SYNC(func_name, func, err, handle, d1_, d2_, x1_, y1_c, param_);
+                auto y1_c = reinterpret_cast<const cuDataType*>(&y1);
+                cublas_native_named_func(func_name, func, err, handle, d1_, d2_, x1_, y1_c, param_);
             }
         });
     });
@@ -1076,8 +1084,8 @@ inline sycl::event rotmg(const char *func_name, Func func, sycl::queue &queue, T
 }
 
 #define ROTMG_LAUNCHER_USM(TYPE, CUBLAS_ROUTINE)                                                   \
-    sycl::event rotmg(sycl::queue &queue, TYPE *d1, TYPE *d2, TYPE *x1, TYPE y1, TYPE *param,      \
-                      const std::vector<sycl::event> &dependencies) {                              \
+    sycl::event rotmg(sycl::queue& queue, TYPE* d1, TYPE* d2, TYPE* x1, TYPE y1, TYPE* param,      \
+                      const std::vector<sycl::event>& dependencies) {                              \
         return rotmg(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, d1, d2, x1, y1, param, dependencies); \
     }
 
@@ -1086,9 +1094,10 @@ ROTMG_LAUNCHER_USM(double, cublasDrotmg)
 #undef ROTMG_LAUNCHER_USM
 
 template <typename Func, typename T>
-inline sycl::event iamax(const char *func_name, Func func, sycl::queue &queue, int64_t n,
-                         const T *x, const int64_t incx, int64_t *result,
-                         const std::vector<sycl::event> &dependencies) {
+inline sycl::event iamax(const char* func_name, Func func, sycl::queue& queue, int64_t n,
+                         const T* x, const int64_t incx, int64_t* result,
+                         oneapi::math::index_base base,
+                         const std::vector<sycl::event>& dependencies) {
     using cuDataType = typename CudaEquivalentType<T>::Type;
     overflow_check(n, incx);
     // cuBLAS does not support int64_t as return type for the data. So we need to
@@ -1097,7 +1106,7 @@ inline sycl::event iamax(const char *func_name, Func func, sycl::queue &queue, i
     // This change may cause failure as the result of integer overflow
     // based on the size.
     int int_res = 0;
-    int *int_res_p = nullptr;
+    int* int_res_p = nullptr;
     bool result_on_device =
         sycl::get_pointer_type(result, queue.get_context()) == sycl::usm::alloc::device;
     if (result_on_device) {
@@ -1106,21 +1115,21 @@ inline sycl::event iamax(const char *func_name, Func func, sycl::queue &queue, i
     else {
         int_res_p = &int_res;
     }
-    auto done = queue.submit([&](sycl::handler &cgh) {
+    auto done = queue.submit([&](sycl::handler& cgh) {
         int64_t num_events = dependencies.size();
         for (int64_t i = 0; i < num_events; i++) {
             cgh.depends_on(dependencies[i]);
         }
-        onemkl_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler &sc) {
+        onemath_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler& sc) {
             auto handle = sc.get_handle(queue);
-            auto x_ = reinterpret_cast<const cuDataType *>(x);
+            auto x_ = reinterpret_cast<const cuDataType*>(x);
             if (result_on_device) {
                 cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
             }
             cublasStatus_t err;
             // For negative incx, iamax returns 0. This behaviour is similar to that of
             // reference iamax.
-            CUBLAS_ERROR_FUNC_T_SYNC(func_name, func, err, handle, n, x_, incx, int_res_p);
+            cublas_native_named_func(func_name, func, err, handle, n, x_, incx, int_res_p);
             if (result_on_device) {
                 cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_HOST);
             }
@@ -1128,23 +1137,31 @@ inline sycl::event iamax(const char *func_name, Func func, sycl::queue &queue, i
     });
     done.wait();
     if (result_on_device) {
-        auto last_ev = queue.submit([&](sycl::handler &cgh) {
-            cgh.single_task([=]() { *result = std::max((int64_t)*int_res_p - 1, (int64_t)0); });
+        auto last_ev = queue.submit([&](sycl::handler& cgh) {
+            cgh.single_task([=]() {
+                *result = std::max(
+                    (int64_t)(*int_res_p + (base == oneapi::math::index_base::zero ? -1 : 0)),
+                    (int64_t)0);
+            });
         });
         last_ev.wait();
         sycl::free(int_res_p, queue);
         return last_ev;
     }
     else {
-        result[0] = std::max((int64_t)(*int_res_p - 1), int64_t{ 0 });
+        result[0] =
+            std::max((int64_t)(*int_res_p + (base == oneapi::math::index_base::zero ? -1 : 0)),
+                     int64_t{ 0 });
         return done;
     }
 }
 
-#define IAMAX_LAUNCHER_USM(TYPE, CUBLAS_ROUTINE)                                                \
-    sycl::event iamax(sycl::queue &queue, int64_t n, const TYPE *x, const int64_t incx,         \
-                      int64_t *result, const std::vector<sycl::event> &dependencies) {          \
-        return iamax(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, result, dependencies); \
+#define IAMAX_LAUNCHER_USM(TYPE, CUBLAS_ROUTINE)                                        \
+    sycl::event iamax(sycl::queue& queue, int64_t n, const TYPE* x, const int64_t incx, \
+                      int64_t* result, oneapi::math::index_base base,                   \
+                      const std::vector<sycl::event>& dependencies) {                   \
+        return iamax(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, result, base,  \
+                     dependencies);                                                     \
     }
 IAMAX_LAUNCHER_USM(float, cublasIsamax)
 IAMAX_LAUNCHER_USM(double, cublasIdamax)
@@ -1153,30 +1170,30 @@ IAMAX_LAUNCHER_USM(std::complex<double>, cublasIzamax)
 #undef IAMAX_LAUNCHER_USM
 
 template <typename Func, typename T>
-inline sycl::event swap(const char *func_name, Func func, sycl::queue &queue, int64_t n, T *x,
-                        int64_t incx, T *y, int64_t incy,
-                        const std::vector<sycl::event> &dependencies) {
+inline sycl::event swap(const char* func_name, Func func, sycl::queue& queue, int64_t n, T* x,
+                        int64_t incx, T* y, int64_t incy,
+                        const std::vector<sycl::event>& dependencies) {
     using cuDataType = typename CudaEquivalentType<T>::Type;
     overflow_check(n, incx, incy);
-    auto done = queue.submit([&](sycl::handler &cgh) {
+    auto done = queue.submit([&](sycl::handler& cgh) {
         int64_t num_events = dependencies.size();
         for (int64_t i = 0; i < num_events; i++) {
             cgh.depends_on(dependencies[i]);
         }
-        onemkl_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler &sc) {
+        onemath_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler& sc) {
             auto handle = sc.get_handle(queue);
-            auto x_ = reinterpret_cast<cuDataType *>(x);
-            auto y_ = reinterpret_cast<cuDataType *>(y);
+            auto x_ = reinterpret_cast<cuDataType*>(x);
+            auto y_ = reinterpret_cast<cuDataType*>(y);
             cublasStatus_t err;
-            CUBLAS_ERROR_FUNC_T_SYNC(func_name, func, err, handle, n, x_, incx, y_, incy);
+            cublas_native_named_func(func_name, func, err, handle, n, x_, incx, y_, incy);
         });
     });
     return done;
 }
 
 #define SWAP_LAUNCHER_USM(TYPE, CUBLAS_ROUTINE)                                                   \
-    sycl::event swap(sycl::queue &queue, int64_t n, TYPE *x, int64_t incx, TYPE *y, int64_t incy, \
-                     const std::vector<sycl::event> &dependencies) {                              \
+    sycl::event swap(sycl::queue& queue, int64_t n, TYPE* x, int64_t incx, TYPE* y, int64_t incy, \
+                     const std::vector<sycl::event>& dependencies) {                              \
         return swap(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, y, incy, dependencies);   \
     }
 
@@ -1187,9 +1204,10 @@ SWAP_LAUNCHER_USM(std::complex<double>, cublasZswap)
 #undef SWAP_LAUNCHER_USM
 
 template <typename Func, typename T>
-inline sycl::event iamin(const char *func_name, Func func, sycl::queue &queue, int64_t n,
-                         const T *x, const int64_t incx, int64_t *result,
-                         const std::vector<sycl::event> &dependencies) {
+inline sycl::event iamin(const char* func_name, Func func, sycl::queue& queue, int64_t n,
+                         const T* x, const int64_t incx, int64_t* result,
+                         oneapi::math::index_base base,
+                         const std::vector<sycl::event>& dependencies) {
     using cuDataType = typename CudaEquivalentType<T>::Type;
     overflow_check(n, incx);
     // cuBLAS does not support int64_t as return type for the data. So we need to
@@ -1198,7 +1216,7 @@ inline sycl::event iamin(const char *func_name, Func func, sycl::queue &queue, i
     // This change may cause failure as the result of integer overflow
     // based on the size.
     int int_res = 0;
-    int *int_res_p = nullptr;
+    int* int_res_p = nullptr;
     bool result_on_device =
         sycl::get_pointer_type(result, queue.get_context()) == sycl::usm::alloc::device;
     if (result_on_device) {
@@ -1207,21 +1225,21 @@ inline sycl::event iamin(const char *func_name, Func func, sycl::queue &queue, i
     else {
         int_res_p = &int_res;
     }
-    auto done = queue.submit([&](sycl::handler &cgh) {
+    auto done = queue.submit([&](sycl::handler& cgh) {
         int64_t num_events = dependencies.size();
         for (int64_t i = 0; i < num_events; i++) {
             cgh.depends_on(dependencies[i]);
         }
-        onemkl_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler &sc) {
+        onemath_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler& sc) {
             auto handle = sc.get_handle(queue);
-            auto x_ = reinterpret_cast<const cuDataType *>(x);
+            auto x_ = reinterpret_cast<const cuDataType*>(x);
             if (result_on_device) {
                 cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
             }
             cublasStatus_t err;
             // For negative incx, iamin returns 0. This behaviour is similar to that of
             // implemented iamin.
-            CUBLAS_ERROR_FUNC_T_SYNC(func_name, func, err, handle, n, x_, incx, int_res_p);
+            cublas_native_named_func(func_name, func, err, handle, n, x_, incx, int_res_p);
             if (result_on_device) {
                 cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_HOST);
             }
@@ -1229,23 +1247,31 @@ inline sycl::event iamin(const char *func_name, Func func, sycl::queue &queue, i
     });
     done.wait();
     if (result_on_device) {
-        auto last_ev = queue.submit([&](sycl::handler &cgh) {
-            cgh.single_task([=]() { *result = std::max((int64_t)*int_res_p - 1, (int64_t)0); });
+        auto last_ev = queue.submit([&](sycl::handler& cgh) {
+            cgh.single_task([=]() {
+                *result = std::max(
+                    (int64_t)(*int_res_p + (base == oneapi::math::index_base::zero ? -1 : 0)),
+                    (int64_t)0);
+            });
         });
         last_ev.wait();
         sycl::free(int_res_p, queue);
         return last_ev;
     }
     else {
-        result[0] = std::max((int64_t)(*int_res_p - 1), int64_t{ 0 });
+        result[0] =
+            std::max((int64_t)(*int_res_p + (base == oneapi::math::index_base::zero ? -1 : 0)),
+                     int64_t{ 0 });
         return done;
     }
 }
 
-#define IAMIN_LAUNCHER_USM(TYPE, CUBLAS_ROUTINE)                                                \
-    sycl::event iamin(sycl::queue &queue, int64_t n, const TYPE *x, const int64_t incx,         \
-                      int64_t *result, const std::vector<sycl::event> &dependencies) {          \
-        return iamin(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, result, dependencies); \
+#define IAMIN_LAUNCHER_USM(TYPE, CUBLAS_ROUTINE)                                        \
+    sycl::event iamin(sycl::queue& queue, int64_t n, const TYPE* x, const int64_t incx, \
+                      int64_t* result, oneapi::math::index_base base,                   \
+                      const std::vector<sycl::event>& dependencies) {                   \
+        return iamin(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, result, base,  \
+                     dependencies);                                                     \
     }
 IAMIN_LAUNCHER_USM(float, cublasIsamin)
 IAMIN_LAUNCHER_USM(double, cublasIdamin)
@@ -1254,30 +1280,30 @@ IAMIN_LAUNCHER_USM(std::complex<double>, cublasIzamin)
 #undef IAMIN_LAUNCHER_USM
 
 template <typename Func, typename T1, typename T2>
-inline sycl::event nrm2(const char *func_name, Func func, sycl::queue &queue, int64_t n,
-                        const T1 *x, const int64_t incx, T2 *result,
-                        const std::vector<sycl::event> &dependencies) {
+inline sycl::event nrm2(const char* func_name, Func func, sycl::queue& queue, int64_t n,
+                        const T1* x, const int64_t incx, T2* result,
+                        const std::vector<sycl::event>& dependencies) {
     using cuDataType1 = typename CudaEquivalentType<T1>::Type;
     using cuDataType2 = typename CudaEquivalentType<T2>::Type;
     overflow_check(n, incx);
 
     bool result_on_device =
         sycl::get_pointer_type(result, queue.get_context()) == sycl::usm::alloc::device;
-    auto done = queue.submit([&](sycl::handler &cgh) {
+    auto done = queue.submit([&](sycl::handler& cgh) {
         int64_t num_events = dependencies.size();
         for (int64_t i = 0; i < num_events; i++) {
             cgh.depends_on(dependencies[i]);
         }
-        onemkl_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler &sc) {
+        onemath_cublas_host_task(cgh, queue, [=](CublasScopedContextHandler& sc) {
             auto handle = sc.get_handle(queue);
-            auto x_ = reinterpret_cast<const cuDataType1 *>(x);
-            auto res_ = reinterpret_cast<cuDataType2 *>(result);
+            auto x_ = reinterpret_cast<const cuDataType1*>(x);
+            auto res_ = reinterpret_cast<cuDataType2*>(result);
             if (result_on_device) {
                 cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
             }
             cublasStatus_t err;
             // NRM2 does not support negative index
-            CUBLAS_ERROR_FUNC_T_SYNC(func_name, func, err, handle, n, x_, std::abs(incx), res_);
+            cublas_native_named_func(func_name, func, err, handle, n, x_, std::abs(incx), res_);
             if (result_on_device) {
                 cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_HOST);
             }
@@ -1287,8 +1313,8 @@ inline sycl::event nrm2(const char *func_name, Func func, sycl::queue &queue, in
 }
 
 #define NRM2_LAUNCHER_USM(TYPE1, TYPE2, CUBLAS_ROUTINE)                                        \
-    sycl::event nrm2(sycl::queue &queue, int64_t n, const TYPE1 *x, const int64_t incx,        \
-                     TYPE2 *result, const std::vector<sycl::event> &dependencies) {            \
+    sycl::event nrm2(sycl::queue& queue, int64_t n, const TYPE1* x, const int64_t incx,        \
+                     TYPE2* result, const std::vector<sycl::event>& dependencies) {            \
         return nrm2(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, result, dependencies); \
     }
 NRM2_LAUNCHER_USM(float, float, cublasSnrm2)
@@ -1304,14 +1330,14 @@ namespace row_major {
 
 // Level 1
 template <typename Func, typename T1, typename T2>
-inline void asum(const char *func_name, Func func, sycl::queue &queue, int64_t n,
-                 sycl::buffer<T1, 1> &x, const int64_t incx, sycl::buffer<T2, 1> &result) {
+inline void asum(const char* func_name, Func func, sycl::queue& queue, int64_t n,
+                 sycl::buffer<T1, 1>& x, const int64_t incx, sycl::buffer<T2, 1>& result) {
     throw unimplemented("blas", "asum", "for row_major layout");
 }
 
 #define ASUM_LAUNCHER(TYPE1, TYPE2, CUBLAS_ROUTINE)                                         \
-    void asum(sycl::queue &queue, int64_t n, sycl::buffer<TYPE1, 1> &x, const int64_t incx, \
-              sycl::buffer<TYPE2, 1> &result) {                                             \
+    void asum(sycl::queue& queue, int64_t n, sycl::buffer<TYPE1, 1>& x, const int64_t incx, \
+              sycl::buffer<TYPE2, 1>& result) {                                             \
         asum(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, result);                   \
     }
 ASUM_LAUNCHER(float, float, cublasSasum)
@@ -1321,13 +1347,13 @@ ASUM_LAUNCHER(std::complex<double>, double, cublasDzasum)
 #undef ASUM_LAUNCHER
 
 template <typename Func, typename T1, typename T2>
-inline void scal(const char *func_name, Func func, sycl::queue &queue, int64_t n, T1 a,
-                 sycl::buffer<T2, 1> &x, int64_t incx) {
+inline void scal(const char* func_name, Func func, sycl::queue& queue, int64_t n, T1 a,
+                 sycl::buffer<T2, 1>& x, int64_t incx) {
     throw unimplemented("blas", "scal", "for row_major layout");
 }
 
 #define SCAL_LAUNCHER(TYPE1, TYPE2, CUBLAS_ROUTINE)                                              \
-    void scal(sycl::queue &queue, int64_t n, TYPE1 a, sycl::buffer<TYPE2, 1> &x, int64_t incx) { \
+    void scal(sycl::queue& queue, int64_t n, TYPE1 a, sycl::buffer<TYPE2, 1>& x, int64_t incx) { \
         scal(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, a, x, incx);                             \
     }
 SCAL_LAUNCHER(float, float, cublasSscal)
@@ -1339,14 +1365,14 @@ SCAL_LAUNCHER(double, std::complex<double>, cublasZdscal)
 #undef SCAL_LAUNCHER
 
 template <typename Func, typename T>
-inline void axpy(const char *func_name, Func func, sycl::queue &queue, int64_t n, T alpha,
-                 sycl::buffer<T, 1> &x, int64_t incx, sycl::buffer<T, 1> &y, int64_t incy) {
+inline void axpy(const char* func_name, Func func, sycl::queue& queue, int64_t n, T alpha,
+                 sycl::buffer<T, 1>& x, int64_t incx, sycl::buffer<T, 1>& y, int64_t incy) {
     throw unimplemented("blas", "axpy", "for row_major layout");
 }
 
 #define AXPY_LAUNCHER(TYPE, CUBLAS_ROUTINE)                                                      \
-    void axpy(sycl::queue &queue, int64_t n, TYPE alpha, sycl::buffer<TYPE, 1> &x, int64_t incx, \
-              sycl::buffer<TYPE, 1> &y, int64_t incy) {                                          \
+    void axpy(sycl::queue& queue, int64_t n, TYPE alpha, sycl::buffer<TYPE, 1>& x, int64_t incx, \
+              sycl::buffer<TYPE, 1>& y, int64_t incy) {                                          \
         axpy(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, alpha, x, incx, y, incy);                \
     }
 
@@ -1356,37 +1382,37 @@ AXPY_LAUNCHER(std::complex<float>, cublasCaxpy)
 AXPY_LAUNCHER(std::complex<double>, cublasZaxpy)
 #undef AXPY_LAUNCHER
 
-void axpby(sycl::queue &queue, int64_t n, float alpha, sycl::buffer<float, 1> &x, int64_t incx,
-           float beta, sycl::buffer<float, 1> &y, int64_t incy) {
+void axpby(sycl::queue& queue, int64_t n, float alpha, sycl::buffer<float, 1>& x, int64_t incx,
+           float beta, sycl::buffer<float, 1>& y, int64_t incy) {
     throw unimplemented("blas", "axpby", "for row_major layout");
 }
 
-void axpby(sycl::queue &queue, int64_t n, double alpha, sycl::buffer<double, 1> &x, int64_t incx,
-           double beta, sycl::buffer<double, 1> &y, int64_t incy) {
+void axpby(sycl::queue& queue, int64_t n, double alpha, sycl::buffer<double, 1>& x, int64_t incx,
+           double beta, sycl::buffer<double, 1>& y, int64_t incy) {
     throw unimplemented("blas", "axpby", "for row_major layout");
 }
 
-void axpby(sycl::queue &queue, int64_t n, std::complex<float> alpha,
-           sycl::buffer<std::complex<float>, 1> &x, int64_t incx, std::complex<float> beta,
-           sycl::buffer<std::complex<float>, 1> &y, int64_t incy) {
+void axpby(sycl::queue& queue, int64_t n, std::complex<float> alpha,
+           sycl::buffer<std::complex<float>, 1>& x, int64_t incx, std::complex<float> beta,
+           sycl::buffer<std::complex<float>, 1>& y, int64_t incy) {
     throw unimplemented("blas", "axpby", "for row_major layout");
 }
 
-void axpby(sycl::queue &queue, int64_t n, std::complex<double> alpha,
-           sycl::buffer<std::complex<double>, 1> &x, int64_t incx, std::complex<double> beta,
-           sycl::buffer<std::complex<double>, 1> &y, int64_t incy) {
+void axpby(sycl::queue& queue, int64_t n, std::complex<double> alpha,
+           sycl::buffer<std::complex<double>, 1>& x, int64_t incx, std::complex<double> beta,
+           sycl::buffer<std::complex<double>, 1>& y, int64_t incy) {
     throw unimplemented("blas", "axpby", "for row_major layout");
 }
 
 template <typename Func, typename T1, typename T2>
-inline void rotg(const char *func_name, Func func, sycl::queue &queue, sycl::buffer<T1, 1> &a,
-                 sycl::buffer<T1, 1> &b, sycl::buffer<T2, 1> &c, sycl::buffer<T1, 1> &s) {
+inline void rotg(const char* func_name, Func func, sycl::queue& queue, sycl::buffer<T1, 1>& a,
+                 sycl::buffer<T1, 1>& b, sycl::buffer<T2, 1>& c, sycl::buffer<T1, 1>& s) {
     throw unimplemented("blas", "rotg", "for row_major layout");
 }
 
 #define ROTG_LAUNCHER(TYPE1, TYPE2, CUBLAS_ROUTINE)                                     \
-    void rotg(sycl::queue &queue, sycl::buffer<TYPE1, 1> &a, sycl::buffer<TYPE1, 1> &b, \
-              sycl::buffer<TYPE2, 1> &c, sycl::buffer<TYPE1, 1> &s) {                   \
+    void rotg(sycl::queue& queue, sycl::buffer<TYPE1, 1>& a, sycl::buffer<TYPE1, 1>& b, \
+              sycl::buffer<TYPE2, 1>& c, sycl::buffer<TYPE1, 1>& s) {                   \
         rotg(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, a, b, c, s);                       \
     }
 
@@ -1397,15 +1423,15 @@ ROTG_LAUNCHER(std::complex<double>, double, cublasZrotg)
 #undef ROTG_LAUNCHER
 
 template <typename Func, typename T>
-inline void rotm(const char *func_name, Func func, sycl::queue &queue, int64_t n,
-                 sycl::buffer<T, 1> &x, int64_t incx, sycl::buffer<T, 1> &y, int64_t incy,
-                 sycl::buffer<T, 1> &param) {
+inline void rotm(const char* func_name, Func func, sycl::queue& queue, int64_t n,
+                 sycl::buffer<T, 1>& x, int64_t incx, sycl::buffer<T, 1>& y, int64_t incy,
+                 sycl::buffer<T, 1>& param) {
     throw unimplemented("blas", "rotm", "for row_major layout");
 }
 
 #define ROTM_LAUNCHER(TYPE, CUBLAS_ROUTINE)                                           \
-    void rotm(sycl::queue &queue, int64_t n, sycl::buffer<TYPE, 1> &x, int64_t incx,  \
-              sycl::buffer<TYPE, 1> &y, int64_t incy, sycl::buffer<TYPE, 1> &param) { \
+    void rotm(sycl::queue& queue, int64_t n, sycl::buffer<TYPE, 1>& x, int64_t incx,  \
+              sycl::buffer<TYPE, 1>& y, int64_t incy, sycl::buffer<TYPE, 1>& param) { \
         rotm(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, y, incy, param);     \
     }
 
@@ -1414,14 +1440,14 @@ ROTM_LAUNCHER(double, cublasDrotm)
 #undef ROTM_LAUNCHER
 
 template <typename Func, typename T>
-inline void copy(const char *func_name, Func func, sycl::queue &queue, int64_t n,
-                 sycl::buffer<T, 1> &x, int64_t incx, sycl::buffer<T, 1> &y, int64_t incy) {
+inline void copy(const char* func_name, Func func, sycl::queue& queue, int64_t n,
+                 sycl::buffer<T, 1>& x, int64_t incx, sycl::buffer<T, 1>& y, int64_t incy) {
     throw unimplemented("blas", "copy", "for row_major layout");
 }
 
 #define COPY_LAUNCHER(TYPE, CUBLAS_ROUTINE)                                          \
-    void copy(sycl::queue &queue, int64_t n, sycl::buffer<TYPE, 1> &x, int64_t incx, \
-              sycl::buffer<TYPE, 1> &y, int64_t incy) {                              \
+    void copy(sycl::queue& queue, int64_t n, sycl::buffer<TYPE, 1>& x, int64_t incx, \
+              sycl::buffer<TYPE, 1>& y, int64_t incy) {                              \
         copy(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, y, incy);           \
     }
 
@@ -1432,15 +1458,15 @@ COPY_LAUNCHER(std::complex<double>, cublasZcopy)
 #undef COPY_LAUNCHER
 
 template <typename Func, typename T>
-inline void dot(const char *func_name, Func func, sycl::queue &queue, int64_t n,
-                sycl::buffer<T, 1> &x, const int64_t incx, sycl::buffer<T, 1> &y, int64_t incy,
-                sycl::buffer<T, 1> &result) {
+inline void dot(const char* func_name, Func func, sycl::queue& queue, int64_t n,
+                sycl::buffer<T, 1>& x, const int64_t incx, sycl::buffer<T, 1>& y, int64_t incy,
+                sycl::buffer<T, 1>& result) {
     throw unimplemented("blas", "dot", "for row_major layout");
 }
 
 #define DOT_LAUNCHER(EXT, TYPE, CUBLAS_ROUTINE)                                                  \
-    void dot##EXT(sycl::queue &queue, int64_t n, sycl::buffer<TYPE, 1> &x, const int64_t incx,   \
-                  sycl::buffer<TYPE, 1> &y, const int64_t incy, sycl::buffer<TYPE, 1> &result) { \
+    void dot##EXT(sycl::queue& queue, int64_t n, sycl::buffer<TYPE, 1>& x, const int64_t incx,   \
+                  sycl::buffer<TYPE, 1>& y, const int64_t incy, sycl::buffer<TYPE, 1>& result) { \
         dot(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, y, incy, result);                \
     }
 DOT_LAUNCHER(, float, cublasSdot)
@@ -1452,15 +1478,15 @@ DOT_LAUNCHER(u, std::complex<double>, cublasZdotu)
 #undef DOT_LAUNCHER
 
 template <typename Func, typename T1, typename T2, typename T3>
-inline void rot(const char *func_name, Func func, sycl::queue &queue, int64_t n,
-                sycl::buffer<T1, 1> &x, const int64_t incx, sycl::buffer<T1, 1> &y, int64_t incy,
+inline void rot(const char* func_name, Func func, sycl::queue& queue, int64_t n,
+                sycl::buffer<T1, 1>& x, const int64_t incx, sycl::buffer<T1, 1>& y, int64_t incy,
                 T2 c, T3 s) {
     throw unimplemented("blas", "rot", "for row_major layout");
 }
 
 #define ROT_LAUNCHER(TYPE1, TYPE2, TYPE3, CUBLAS_ROUTINE)                                  \
-    void rot(sycl::queue &queue, int64_t n, sycl::buffer<TYPE1, 1> &x, const int64_t incx, \
-             sycl::buffer<TYPE1, 1> &y, int64_t incy, TYPE2 c, TYPE3 s) {                  \
+    void rot(sycl::queue& queue, int64_t n, sycl::buffer<TYPE1, 1>& x, const int64_t incx, \
+             sycl::buffer<TYPE1, 1>& y, int64_t incy, TYPE2 c, TYPE3 s) {                  \
         rot(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, y, incy, c, s);            \
     }
 
@@ -1470,25 +1496,25 @@ ROT_LAUNCHER(std::complex<float>, float, float, cublasCsrot)
 ROT_LAUNCHER(std::complex<double>, double, double, cublasZdrot)
 #undef ROT_LAUNCHER
 
-void sdsdot(sycl::queue &queue, int64_t n, float sb, sycl::buffer<float, 1> &x, int64_t incx,
-            sycl::buffer<float, 1> &y, int64_t incy, sycl::buffer<float, 1> &result) {
+void sdsdot(sycl::queue& queue, int64_t n, float sb, sycl::buffer<float, 1>& x, int64_t incx,
+            sycl::buffer<float, 1>& y, int64_t incy, sycl::buffer<float, 1>& result) {
     throw unimplemented("blas", "sdsdot", "for row_major layout");
 }
 
-void dot(sycl::queue &queue, int64_t n, sycl::buffer<float, 1> &x, int64_t incx,
-         sycl::buffer<float, 1> &y, int64_t incy, sycl::buffer<double, 1> &result) {
+void dot(sycl::queue& queue, int64_t n, sycl::buffer<float, 1>& x, int64_t incx,
+         sycl::buffer<float, 1>& y, int64_t incy, sycl::buffer<double, 1>& result) {
     throw unimplemented("blas", "dot", "for row_major layout");
 }
 
 template <typename Func, typename T>
-inline void rotmg(const char *func_name, Func func, sycl::queue &queue, sycl::buffer<T, 1> &d1,
-                  sycl::buffer<T, 1> &d2, sycl::buffer<T, 1> &x1, T y1, sycl::buffer<T, 1> &param) {
+inline void rotmg(const char* func_name, Func func, sycl::queue& queue, sycl::buffer<T, 1>& d1,
+                  sycl::buffer<T, 1>& d2, sycl::buffer<T, 1>& x1, T y1, sycl::buffer<T, 1>& param) {
     throw unimplemented("blas", "rotmg", "for row_major layout");
 }
 
 #define ROTMG_LAUNCHER(TYPE, CUBLAS_ROUTINE)                                             \
-    void rotmg(sycl::queue &queue, sycl::buffer<TYPE, 1> &d1, sycl::buffer<TYPE, 1> &d2, \
-               sycl::buffer<TYPE, 1> &x1, TYPE y1, sycl::buffer<TYPE, 1> &param) {       \
+    void rotmg(sycl::queue& queue, sycl::buffer<TYPE, 1>& d1, sycl::buffer<TYPE, 1>& d2, \
+               sycl::buffer<TYPE, 1>& x1, TYPE y1, sycl::buffer<TYPE, 1>& param) {       \
         rotmg(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, d1, d2, x1, y1, param);            \
     }
 
@@ -1497,15 +1523,16 @@ ROTMG_LAUNCHER(double, cublasDrotmg)
 #undef ROTMG_LAUNCHER
 
 template <typename Func, typename T>
-inline void iamax(const char *func_name, Func func, sycl::queue &queue, int64_t n,
-                  sycl::buffer<T, 1> &x, const int64_t incx, sycl::buffer<int64_t, 1> &result) {
+inline void iamax(const char* func_name, Func func, sycl::queue& queue, int64_t n,
+                  sycl::buffer<T, 1>& x, const int64_t incx, sycl::buffer<int64_t, 1>& result,
+                  oneapi::math::index_base base) {
     throw unimplemented("blas", "iamax", "for row_major layout");
 }
 
 #define IAMAX_LAUNCHER(TYPE, CUBLAS_ROUTINE)                                                \
-    void iamax(sycl::queue &queue, int64_t n, sycl::buffer<TYPE, 1> &x, const int64_t incx, \
-               sycl::buffer<int64_t, 1> &result) {                                          \
-        iamax(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, result);                  \
+    void iamax(sycl::queue& queue, int64_t n, sycl::buffer<TYPE, 1>& x, const int64_t incx, \
+               sycl::buffer<int64_t, 1>& result, oneapi::math::index_base base) {           \
+        iamax(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, result, base);            \
     }
 IAMAX_LAUNCHER(float, cublasIsamax)
 IAMAX_LAUNCHER(double, cublasIdamax)
@@ -1514,14 +1541,14 @@ IAMAX_LAUNCHER(std::complex<double>, cublasIzamax)
 #undef IAMAX_LAUNCHER
 
 template <typename Func, typename T>
-inline void swap(const char *func_name, Func func, sycl::queue &queue, int64_t n,
-                 sycl::buffer<T, 1> &x, int64_t incx, sycl::buffer<T, 1> &y, int64_t incy) {
+inline void swap(const char* func_name, Func func, sycl::queue& queue, int64_t n,
+                 sycl::buffer<T, 1>& x, int64_t incx, sycl::buffer<T, 1>& y, int64_t incy) {
     throw unimplemented("blas", "swap", "for row_major layout");
 }
 
 #define SWAP_LAUNCHER(TYPE, CUBLAS_ROUTINE)                                          \
-    void swap(sycl::queue &queue, int64_t n, sycl::buffer<TYPE, 1> &x, int64_t incx, \
-              sycl::buffer<TYPE, 1> &y, int64_t incy) {                              \
+    void swap(sycl::queue& queue, int64_t n, sycl::buffer<TYPE, 1>& x, int64_t incx, \
+              sycl::buffer<TYPE, 1>& y, int64_t incy) {                              \
         swap(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, y, incy);           \
     }
 
@@ -1532,15 +1559,16 @@ SWAP_LAUNCHER(std::complex<double>, cublasZswap)
 #undef SWAP_LAUNCHER
 
 template <typename Func, typename T>
-inline void iamin(const char *func_name, Func func, sycl::queue &queue, int64_t n,
-                  sycl::buffer<T, 1> &x, const int64_t incx, sycl::buffer<int64_t, 1> &result) {
+inline void iamin(const char* func_name, Func func, sycl::queue& queue, int64_t n,
+                  sycl::buffer<T, 1>& x, const int64_t incx, sycl::buffer<int64_t, 1>& result,
+                  oneapi::math::index_base base) {
     throw unimplemented("blas", "iamin", "for row_major layout");
 }
 
 #define IAMIN_LAUNCHER(TYPE, CUBLAS_ROUTINE)                                                \
-    void iamin(sycl::queue &queue, int64_t n, sycl::buffer<TYPE, 1> &x, const int64_t incx, \
-               sycl::buffer<int64_t, 1> &result) {                                          \
-        iamin(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, result);                  \
+    void iamin(sycl::queue& queue, int64_t n, sycl::buffer<TYPE, 1>& x, const int64_t incx, \
+               sycl::buffer<int64_t, 1>& result, oneapi::math::index_base base) {           \
+        iamin(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, result, base);            \
     }
 IAMIN_LAUNCHER(float, cublasIsamin)
 IAMIN_LAUNCHER(double, cublasIdamin)
@@ -1549,14 +1577,14 @@ IAMIN_LAUNCHER(std::complex<double>, cublasIzamin)
 #undef IAMIN_LAUNCHER
 
 template <typename Func, typename T1, typename T2>
-inline void nrm2(const char *func_name, Func func, sycl::queue &queue, int64_t n,
-                 sycl::buffer<T1, 1> &x, const int64_t incx, sycl::buffer<T2, 1> &result) {
+inline void nrm2(const char* func_name, Func func, sycl::queue& queue, int64_t n,
+                 sycl::buffer<T1, 1>& x, const int64_t incx, sycl::buffer<T2, 1>& result) {
     throw unimplemented("blas", "nrm2", "for row_major layout");
 }
 
 #define NRM2_LAUNCHER(TYPE1, TYPE2, CUBLAS_ROUTINE)                                         \
-    void nrm2(sycl::queue &queue, int64_t n, sycl::buffer<TYPE1, 1> &x, const int64_t incx, \
-              sycl::buffer<TYPE2, 1> &result) {                                             \
+    void nrm2(sycl::queue& queue, int64_t n, sycl::buffer<TYPE1, 1>& x, const int64_t incx, \
+              sycl::buffer<TYPE2, 1>& result) {                                             \
         nrm2(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, result);                   \
     }
 NRM2_LAUNCHER(float, float, cublasSnrm2)
@@ -1569,15 +1597,15 @@ NRM2_LAUNCHER(std::complex<double>, double, cublasDznrm2)
 
 // Level 1
 template <typename Func, typename T1, typename T2>
-inline sycl::event asum(const char *func_name, Func func, sycl::queue &queue, int64_t n,
-                        const T1 *x, const int64_t incx, T2 *result,
-                        const std::vector<sycl::event> &dependencies) {
+inline sycl::event asum(const char* func_name, Func func, sycl::queue& queue, int64_t n,
+                        const T1* x, const int64_t incx, T2* result,
+                        const std::vector<sycl::event>& dependencies) {
     throw unimplemented("blas", "asum", "for row_major layout");
 }
 
 #define ASUM_LAUNCHER_USM(TYPE1, TYPE2, CUBLAS_ROUTINE)                                        \
-    sycl::event asum(sycl::queue &queue, int64_t n, const TYPE1 *x, const int64_t incx,        \
-                     TYPE2 *result, const std::vector<sycl::event> &dependencies) {            \
+    sycl::event asum(sycl::queue& queue, int64_t n, const TYPE1* x, const int64_t incx,        \
+                     TYPE2* result, const std::vector<sycl::event>& dependencies) {            \
         return asum(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, result, dependencies); \
     }
 ASUM_LAUNCHER_USM(float, float, cublasSasum)
@@ -1587,14 +1615,14 @@ ASUM_LAUNCHER_USM(std::complex<double>, double, cublasDzasum)
 #undef ASUM_LAUNCHER_USM
 
 template <typename Func, typename T1, typename T2>
-inline sycl::event scal(const char *func_name, Func func, sycl::queue &queue, int64_t n, T1 a,
-                        T2 *x, int64_t incx, const std::vector<sycl::event> &dependencies) {
+inline sycl::event scal(const char* func_name, Func func, sycl::queue& queue, int64_t n, T1 a,
+                        T2* x, int64_t incx, const std::vector<sycl::event>& dependencies) {
     throw unimplemented("blas", "scal", "for row_major layout");
 }
 
 #define SCAL_LAUNCHER_USM(TYPE1, TYPE2, CUBLAS_ROUTINE)                                   \
-    sycl::event scal(sycl::queue &queue, int64_t n, TYPE1 a, TYPE2 *x, int64_t incx,      \
-                     const std::vector<sycl::event> &dependencies) {                      \
+    sycl::event scal(sycl::queue& queue, int64_t n, TYPE1 a, TYPE2* x, int64_t incx,      \
+                     const std::vector<sycl::event>& dependencies) {                      \
         return scal(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, a, x, incx, dependencies); \
     }
 SCAL_LAUNCHER_USM(float, float, cublasSscal)
@@ -1606,15 +1634,15 @@ SCAL_LAUNCHER_USM(double, std::complex<double>, cublasZdscal)
 #undef SCAL_LAUNCHER_USM
 
 template <typename Func, typename T>
-inline sycl::event axpy(const char *func_name, Func func, sycl::queue &queue, int64_t n, T alpha,
-                        const T *x, int64_t incx, T *y, int64_t incy,
-                        const std::vector<sycl::event> &dependencies) {
+inline sycl::event axpy(const char* func_name, Func func, sycl::queue& queue, int64_t n, T alpha,
+                        const T* x, int64_t incx, T* y, int64_t incy,
+                        const std::vector<sycl::event>& dependencies) {
     throw unimplemented("blas", "axpy", "for row_major layout");
 }
 
 #define AXPY_LAUNCHER_USM(TYPE, CUBLAS_ROUTINE)                                              \
-    sycl::event axpy(sycl::queue &queue, int64_t n, TYPE alpha, const TYPE *x, int64_t incx, \
-                     TYPE *y, int64_t incy, const std::vector<sycl::event> &dependencies) {  \
+    sycl::event axpy(sycl::queue& queue, int64_t n, TYPE alpha, const TYPE* x, int64_t incx, \
+                     TYPE* y, int64_t incy, const std::vector<sycl::event>& dependencies) {  \
         return axpy(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, alpha, x, incx, y, incy,      \
                     dependencies);                                                           \
     }
@@ -1625,38 +1653,38 @@ AXPY_LAUNCHER_USM(std::complex<float>, cublasCaxpy)
 AXPY_LAUNCHER_USM(std::complex<double>, cublasZaxpy)
 #undef AXPY_LAUNCHER_USM
 
-sycl::event axpby(sycl::queue &queue, int64_t n, float alpha, const float *x, int64_t incx,
-                  float beta, float *y, int64_t incy,
-                  const std::vector<sycl::event> &dependencies) {
+sycl::event axpby(sycl::queue& queue, int64_t n, float alpha, const float* x, int64_t incx,
+                  float beta, float* y, int64_t incy,
+                  const std::vector<sycl::event>& dependencies) {
     throw unimplemented("blas", "axpby", "for row_major layout");
 }
-sycl::event axpby(sycl::queue &queue, int64_t n, double alpha, const double *x, int64_t incx,
-                  double beta, double *y, int64_t incy,
-                  const std::vector<sycl::event> &dependencies) {
+sycl::event axpby(sycl::queue& queue, int64_t n, double alpha, const double* x, int64_t incx,
+                  double beta, double* y, int64_t incy,
+                  const std::vector<sycl::event>& dependencies) {
     throw unimplemented("blas", "axpby", "for row_major layout");
 }
-sycl::event axpby(sycl::queue &queue, int64_t n, std::complex<float> alpha,
-                  const std::complex<float> *x, int64_t incx, std::complex<float> beta,
-                  std::complex<float> *y, int64_t incy,
-                  const std::vector<sycl::event> &dependencies) {
+sycl::event axpby(sycl::queue& queue, int64_t n, std::complex<float> alpha,
+                  const std::complex<float>* x, int64_t incx, std::complex<float> beta,
+                  std::complex<float>* y, int64_t incy,
+                  const std::vector<sycl::event>& dependencies) {
     throw unimplemented("blas", "axpby", "for row_major layout");
 }
-sycl::event axpby(sycl::queue &queue, int64_t n, std::complex<double> alpha,
-                  const std::complex<double> *x, int64_t incx, std::complex<double> beta,
-                  std::complex<double> *y, int64_t incy,
-                  const std::vector<sycl::event> &dependencies) {
+sycl::event axpby(sycl::queue& queue, int64_t n, std::complex<double> alpha,
+                  const std::complex<double>* x, int64_t incx, std::complex<double> beta,
+                  std::complex<double>* y, int64_t incy,
+                  const std::vector<sycl::event>& dependencies) {
     throw unimplemented("blas", "axpby", "for row_major layout");
 }
 
 template <typename Func, typename T1, typename T2>
-inline sycl::event rotg(const char *func_name, Func func, sycl::queue &queue, T1 *a, T1 *b, T2 *c,
-                        T1 *s, const std::vector<sycl::event> &dependencies) {
+inline sycl::event rotg(const char* func_name, Func func, sycl::queue& queue, T1* a, T1* b, T2* c,
+                        T1* s, const std::vector<sycl::event>& dependencies) {
     throw unimplemented("blas", "rotg", "for row_major layout");
 }
 
 #define ROTG_LAUNCHER_USM(TYPE1, TYPE2, CUBLAS_ROUTINE)                                \
-    sycl::event rotg(sycl::queue &queue, TYPE1 *a, TYPE1 *b, TYPE2 *c, TYPE1 *s,       \
-                     const std::vector<sycl::event> &dependencies) {                   \
+    sycl::event rotg(sycl::queue& queue, TYPE1* a, TYPE1* b, TYPE2* c, TYPE1* s,       \
+                     const std::vector<sycl::event>& dependencies) {                   \
         return rotg(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, a, b, c, s, dependencies); \
     }
 
@@ -1667,15 +1695,15 @@ ROTG_LAUNCHER_USM(std::complex<double>, double, cublasZrotg)
 #undef ROTG_LAUNCHER_USM
 
 template <typename Func, typename T>
-inline sycl::event rotm(const char *func_name, Func func, sycl::queue &queue, int64_t n, T *x,
-                        int64_t incx, T *y, int64_t incy, T *param,
-                        const std::vector<sycl::event> &dependencies) {
+inline sycl::event rotm(const char* func_name, Func func, sycl::queue& queue, int64_t n, T* x,
+                        int64_t incx, T* y, int64_t incy, T* param,
+                        const std::vector<sycl::event>& dependencies) {
     throw unimplemented("blas", "rotm", "for row_major layout");
 }
 
 #define ROTM_LAUNCHER_USM(TYPE, CUBLAS_ROUTINE)                                                   \
-    sycl::event rotm(sycl::queue &queue, int64_t n, TYPE *x, int64_t incx, TYPE *y, int64_t incy, \
-                     TYPE *param, const std::vector<sycl::event> &dependencies) {                 \
+    sycl::event rotm(sycl::queue& queue, int64_t n, TYPE* x, int64_t incx, TYPE* y, int64_t incy, \
+                     TYPE* param, const std::vector<sycl::event>& dependencies) {                 \
         return rotm(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, y, incy, param,           \
                     dependencies);                                                                \
     }
@@ -1685,15 +1713,15 @@ ROTM_LAUNCHER_USM(double, cublasDrotm)
 #undef ROTM_LAUNCHER_USM
 
 template <typename Func, typename T>
-inline sycl::event copy(const char *func_name, Func func, sycl::queue &queue, int64_t n, const T *x,
-                        int64_t incx, T *y, int64_t incy,
-                        const std::vector<sycl::event> &dependencies) {
+inline sycl::event copy(const char* func_name, Func func, sycl::queue& queue, int64_t n, const T* x,
+                        int64_t incx, T* y, int64_t incy,
+                        const std::vector<sycl::event>& dependencies) {
     throw unimplemented("blas", "copy", "for row_major layout");
 }
 
 #define COPY_LAUNCHER_USM(TYPE, CUBLAS_ROUTINE)                                                 \
-    sycl::event copy(sycl::queue &queue, int64_t n, const TYPE *x, int64_t incx, TYPE *y,       \
-                     int64_t incy, const std::vector<sycl::event> &dependencies) {              \
+    sycl::event copy(sycl::queue& queue, int64_t n, const TYPE* x, int64_t incx, TYPE* y,       \
+                     int64_t incy, const std::vector<sycl::event>& dependencies) {              \
         return copy(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, y, incy, dependencies); \
     }
 
@@ -1704,16 +1732,16 @@ COPY_LAUNCHER_USM(std::complex<double>, cublasZcopy)
 #undef COPY_LAUNCHER_USM
 
 template <typename Func, typename T>
-inline sycl::event dot(const char *func_name, Func func, sycl::queue &queue, int64_t n, const T *x,
-                       const int64_t incx, const T *y, int64_t incy, T *result,
-                       const std::vector<sycl::event> &dependencies) {
+inline sycl::event dot(const char* func_name, Func func, sycl::queue& queue, int64_t n, const T* x,
+                       const int64_t incx, const T* y, int64_t incy, T* result,
+                       const std::vector<sycl::event>& dependencies) {
     throw unimplemented("blas", "dot", "for row_major layout");
 }
 
 #define DOT_LAUNCHER_USM(EXT, TYPE, CUBLAS_ROUTINE)                                        \
-    sycl::event dot##EXT(sycl::queue &queue, int64_t n, const TYPE *x, const int64_t incx, \
-                         const TYPE *y, const int64_t incy, TYPE *result,                  \
-                         const std::vector<sycl::event> &dependencies) {                   \
+    sycl::event dot##EXT(sycl::queue& queue, int64_t n, const TYPE* x, const int64_t incx, \
+                         const TYPE* y, const int64_t incy, TYPE* result,                  \
+                         const std::vector<sycl::event>& dependencies) {                   \
         return dot(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, y, incy, result,    \
                    dependencies);                                                          \
     }
@@ -1726,16 +1754,16 @@ DOT_LAUNCHER_USM(u, std::complex<double>, cublasZdotu)
 #undef DOT_LAUNCHER_USM
 
 template <typename Func, typename T1, typename T2, typename T3>
-inline sycl::event rot(const char *func_name, Func func, sycl::queue &queue, int64_t n, T1 *x,
-                       const int64_t incx, T1 *y, int64_t incy, T2 c, T3 s,
-                       const std::vector<sycl::event> &dependencies) {
+inline sycl::event rot(const char* func_name, Func func, sycl::queue& queue, int64_t n, T1* x,
+                       const int64_t incx, T1* y, int64_t incy, T2 c, T3 s,
+                       const std::vector<sycl::event>& dependencies) {
     throw unimplemented("blas", "rot", "for row_major layout");
 }
 
 #define ROT_LAUNCHER_USM(TYPE1, TYPE2, TYPE3, CUBLAS_ROUTINE)                              \
-    sycl::event rot(sycl::queue &queue, int64_t n, TYPE1 *x, const int64_t incx, TYPE1 *y, \
+    sycl::event rot(sycl::queue& queue, int64_t n, TYPE1* x, const int64_t incx, TYPE1* y, \
                     int64_t incy, TYPE2 c, TYPE3 s,                                        \
-                    const std::vector<sycl::event> &dependencies) {                        \
+                    const std::vector<sycl::event>& dependencies) {                        \
         return rot(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, y, incy, c, s,      \
                    dependencies);                                                          \
     }
@@ -1746,26 +1774,26 @@ ROT_LAUNCHER_USM(std::complex<float>, float, float, cublasCsrot)
 ROT_LAUNCHER_USM(std::complex<double>, double, double, cublasZdrot)
 #undef ROT_LAUNCHER_USM
 
-sycl::event sdsdot(sycl::queue &queue, int64_t n, float sb, const float *x, int64_t incx,
-                   const float *y, int64_t incy, float *result,
-                   const std::vector<sycl::event> &dependencies) {
+sycl::event sdsdot(sycl::queue& queue, int64_t n, float sb, const float* x, int64_t incx,
+                   const float* y, int64_t incy, float* result,
+                   const std::vector<sycl::event>& dependencies) {
     throw unimplemented("blas", "sdsdot", "for row_major layout");
 }
 
-sycl::event dot(sycl::queue &queue, int64_t n, const float *x, int64_t incx, const float *y,
-                int64_t incy, double *result, const std::vector<sycl::event> &dependencies) {
+sycl::event dot(sycl::queue& queue, int64_t n, const float* x, int64_t incx, const float* y,
+                int64_t incy, double* result, const std::vector<sycl::event>& dependencies) {
     throw unimplemented("blas", "dot", "for row_major layout");
 }
 
 template <typename Func, typename T>
-inline sycl::event rotmg(const char *func_name, Func func, sycl::queue &queue, T *d1, T *d2, T *x1,
-                         T y1, T *param, const std::vector<sycl::event> &dependencies) {
+inline sycl::event rotmg(const char* func_name, Func func, sycl::queue& queue, T* d1, T* d2, T* x1,
+                         T y1, T* param, const std::vector<sycl::event>& dependencies) {
     throw unimplemented("blas", "rotmg", "for row_major layout");
 }
 
 #define ROTMG_LAUNCHER_USM(TYPE, CUBLAS_ROUTINE)                                                   \
-    sycl::event rotmg(sycl::queue &queue, TYPE *d1, TYPE *d2, TYPE *x1, TYPE y1, TYPE *param,      \
-                      const std::vector<sycl::event> &dependencies) {                              \
+    sycl::event rotmg(sycl::queue& queue, TYPE* d1, TYPE* d2, TYPE* x1, TYPE y1, TYPE* param,      \
+                      const std::vector<sycl::event>& dependencies) {                              \
         return rotmg(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, d1, d2, x1, y1, param, dependencies); \
     }
 
@@ -1774,16 +1802,19 @@ ROTMG_LAUNCHER_USM(double, cublasDrotmg)
 #undef ROTMG_LAUNCHER_USM
 
 template <typename Func, typename T>
-inline sycl::event iamax(const char *func_name, Func func, sycl::queue &queue, int64_t n,
-                         const T *x, const int64_t incx, int64_t *result,
-                         const std::vector<sycl::event> &dependencies) {
+inline sycl::event iamax(const char* func_name, Func func, sycl::queue& queue, int64_t n,
+                         const T* x, const int64_t incx, int64_t* result,
+                         oneapi::math::index_base base,
+                         const std::vector<sycl::event>& dependencies) {
     throw unimplemented("blas", "iamax", "for row_major layout");
 }
 
-#define IAMAX_LAUNCHER_USM(TYPE, CUBLAS_ROUTINE)                                                \
-    sycl::event iamax(sycl::queue &queue, int64_t n, const TYPE *x, const int64_t incx,         \
-                      int64_t *result, const std::vector<sycl::event> &dependencies) {          \
-        return iamax(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, result, dependencies); \
+#define IAMAX_LAUNCHER_USM(TYPE, CUBLAS_ROUTINE)                                        \
+    sycl::event iamax(sycl::queue& queue, int64_t n, const TYPE* x, const int64_t incx, \
+                      int64_t* result, oneapi::math::index_base base,                   \
+                      const std::vector<sycl::event>& dependencies) {                   \
+        return iamax(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, result, base,  \
+                     dependencies);                                                     \
     }
 IAMAX_LAUNCHER_USM(float, cublasIsamax)
 IAMAX_LAUNCHER_USM(double, cublasIdamax)
@@ -1792,15 +1823,15 @@ IAMAX_LAUNCHER_USM(std::complex<double>, cublasIzamax)
 #undef IAMAX_LAUNCHER_USM
 
 template <typename Func, typename T>
-inline sycl::event swap(const char *func_name, Func func, sycl::queue &queue, int64_t n, T *x,
-                        int64_t incx, T *y, int64_t incy,
-                        const std::vector<sycl::event> &dependencies) {
+inline sycl::event swap(const char* func_name, Func func, sycl::queue& queue, int64_t n, T* x,
+                        int64_t incx, T* y, int64_t incy,
+                        const std::vector<sycl::event>& dependencies) {
     throw unimplemented("blas", "swap", "for row_major layout");
 }
 
 #define SWAP_LAUNCHER_USM(TYPE, CUBLAS_ROUTINE)                                                   \
-    sycl::event swap(sycl::queue &queue, int64_t n, TYPE *x, int64_t incx, TYPE *y, int64_t incy, \
-                     const std::vector<sycl::event> &dependencies) {                              \
+    sycl::event swap(sycl::queue& queue, int64_t n, TYPE* x, int64_t incx, TYPE* y, int64_t incy, \
+                     const std::vector<sycl::event>& dependencies) {                              \
         return swap(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, y, incy, dependencies);   \
     }
 
@@ -1811,16 +1842,19 @@ SWAP_LAUNCHER_USM(std::complex<double>, cublasZswap)
 #undef SWAP_LAUNCHER_USM
 
 template <typename Func, typename T>
-inline sycl::event iamin(const char *func_name, Func func, sycl::queue &queue, int64_t n,
-                         const T *x, const int64_t incx, int64_t *result,
-                         const std::vector<sycl::event> &dependencies) {
+inline sycl::event iamin(const char* func_name, Func func, sycl::queue& queue, int64_t n,
+                         const T* x, const int64_t incx, int64_t* result,
+                         oneapi::math::index_base base,
+                         const std::vector<sycl::event>& dependencies) {
     throw unimplemented("blas", "iamin", "for row_major layout");
 }
 
-#define IAMIN_LAUNCHER_USM(TYPE, CUBLAS_ROUTINE)                                                \
-    sycl::event iamin(sycl::queue &queue, int64_t n, const TYPE *x, const int64_t incx,         \
-                      int64_t *result, const std::vector<sycl::event> &dependencies) {          \
-        return iamin(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, result, dependencies); \
+#define IAMIN_LAUNCHER_USM(TYPE, CUBLAS_ROUTINE)                                        \
+    sycl::event iamin(sycl::queue& queue, int64_t n, const TYPE* x, const int64_t incx, \
+                      int64_t* result, oneapi::math::index_base base,                   \
+                      const std::vector<sycl::event>& dependencies) {                   \
+        return iamin(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, result, base,  \
+                     dependencies);                                                     \
     }
 IAMIN_LAUNCHER_USM(float, cublasIsamin)
 IAMIN_LAUNCHER_USM(double, cublasIdamin)
@@ -1829,15 +1863,15 @@ IAMIN_LAUNCHER_USM(std::complex<double>, cublasIzamin)
 #undef IAMIN_LAUNCHER_USM
 
 template <typename Func, typename T1, typename T2>
-inline sycl::event nrm2(const char *func_name, Func func, sycl::queue &queue, int64_t n,
-                        const T1 *x, const int64_t incx, T2 *result,
-                        const std::vector<sycl::event> &dependencies) {
+inline sycl::event nrm2(const char* func_name, Func func, sycl::queue& queue, int64_t n,
+                        const T1* x, const int64_t incx, T2* result,
+                        const std::vector<sycl::event>& dependencies) {
     throw unimplemented("blas", "nrm2", "for row_major layout");
 }
 
 #define NRM2_LAUNCHER_USM(TYPE1, TYPE2, CUBLAS_ROUTINE)                                        \
-    sycl::event nrm2(sycl::queue &queue, int64_t n, const TYPE1 *x, const int64_t incx,        \
-                     TYPE2 *result, const std::vector<sycl::event> &dependencies) {            \
+    sycl::event nrm2(sycl::queue& queue, int64_t n, const TYPE1* x, const int64_t incx,        \
+                     TYPE2* result, const std::vector<sycl::event>& dependencies) {            \
         return nrm2(#CUBLAS_ROUTINE, CUBLAS_ROUTINE, queue, n, x, incx, result, dependencies); \
     }
 NRM2_LAUNCHER_USM(float, float, cublasSnrm2)
@@ -1849,5 +1883,5 @@ NRM2_LAUNCHER_USM(std::complex<double>, double, cublasDznrm2)
 } // namespace row_major
 } // namespace cublas
 } // namespace blas
-} // namespace mkl
+} // namespace math
 } // namespace oneapi

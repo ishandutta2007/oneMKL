@@ -30,9 +30,9 @@
 #include <CL/sycl.hpp>
 #endif
 #include "cblas.h"
-#include "oneapi/mkl.hpp"
-#include "oneapi/mkl/detail/config.hpp"
-#include "onemkl_blas_helper.hpp"
+#include "oneapi/math.hpp"
+#include "oneapi/math/detail/config.hpp"
+#include "onemath_blas_helper.hpp"
 #include "reference_blas_templates.hpp"
 #include "test_common.hpp"
 #include "test_helper.hpp"
@@ -42,17 +42,17 @@
 using namespace sycl;
 using std::vector;
 
-extern std::vector<sycl::device *> devices;
+extern std::vector<sycl::device*> devices;
 
 namespace {
 
 template <typename fp>
-int test(device *dev, oneapi::mkl::layout layout, oneapi::mkl::uplo upper_lower, int n, fp alpha,
+int test(device* dev, oneapi::math::layout layout, oneapi::math::uplo upper_lower, int n, fp alpha,
          int incx) {
     // Prepare data.
     vector<fp> x, A_ref, A;
     rand_vector(x, n, incx);
-    rand_matrix(A, layout, oneapi::mkl::transpose::nontrans, n, n, n);
+    rand_matrix(A, layout, oneapi::math::transpose::nontrans, n, n, n);
     A_ref = A;
 
     // Call Reference SPR.
@@ -60,17 +60,17 @@ int test(device *dev, oneapi::mkl::layout layout, oneapi::mkl::uplo upper_lower,
     using fp_ref = typename ref_type_info<fp>::type;
 
     ::spr(convert_to_cblas_layout(layout), convert_to_cblas_uplo(upper_lower), &n_ref,
-          (fp_ref *)&alpha, (fp_ref *)x.data(), &incx_ref, (fp_ref *)A_ref.data());
+          (fp_ref*)&alpha, (fp_ref*)x.data(), &incx_ref, (fp_ref*)A_ref.data());
 
     // Call DPC++ SPR.
 
     // Catch asynchronous exceptions.
     auto exception_handler = [](exception_list exceptions) {
-        for (std::exception_ptr const &e : exceptions) {
+        for (std::exception_ptr const& e : exceptions) {
             try {
                 std::rethrow_exception(e);
             }
-            catch (exception const &e) {
+            catch (exception const& e) {
                 std::cout << "Caught asynchronous SYCL exception during SPR:\n"
                           << e.what() << std::endl;
                 print_error_code(e);
@@ -86,90 +86,90 @@ int test(device *dev, oneapi::mkl::layout layout, oneapi::mkl::uplo upper_lower,
     try {
 #ifdef CALL_RT_API
         switch (layout) {
-            case oneapi::mkl::layout::col_major:
-                oneapi::mkl::blas::column_major::spr(main_queue, upper_lower, n, alpha, x_buffer,
-                                                     incx, A_buffer);
+            case oneapi::math::layout::col_major:
+                oneapi::math::blas::column_major::spr(main_queue, upper_lower, n, alpha, x_buffer,
+                                                      incx, A_buffer);
                 break;
-            case oneapi::mkl::layout::row_major:
-                oneapi::mkl::blas::row_major::spr(main_queue, upper_lower, n, alpha, x_buffer, incx,
-                                                  A_buffer);
+            case oneapi::math::layout::row_major:
+                oneapi::math::blas::row_major::spr(main_queue, upper_lower, n, alpha, x_buffer,
+                                                   incx, A_buffer);
                 break;
             default: break;
         }
 #else
         switch (layout) {
-            case oneapi::mkl::layout::col_major:
-                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::mkl::blas::column_major::spr,
+            case oneapi::math::layout::col_major:
+                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::math::blas::column_major::spr,
                                         upper_lower, n, alpha, x_buffer, incx, A_buffer);
                 break;
-            case oneapi::mkl::layout::row_major:
-                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::mkl::blas::row_major::spr, upper_lower,
+            case oneapi::math::layout::row_major:
+                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::math::blas::row_major::spr, upper_lower,
                                         n, alpha, x_buffer, incx, A_buffer);
                 break;
             default: break;
         }
 #endif
     }
-    catch (exception const &e) {
+    catch (exception const& e) {
         std::cout << "Caught synchronous SYCL exception during SPR:\n" << e.what() << std::endl;
         print_error_code(e);
     }
 
-    catch (const oneapi::mkl::unimplemented &e) {
+    catch (const oneapi::math::unimplemented& e) {
         return test_skipped;
     }
 
-    catch (const std::runtime_error &error) {
+    catch (const std::runtime_error& error) {
         std::cout << "Error raised during execution of SPR:\n" << error.what() << std::endl;
     }
 
     // Compare the results of reference implementation and DPC++ implementation.
-    auto A_accessor = A_buffer.template get_host_access(read_only);
+    auto A_accessor = A_buffer.get_host_access(read_only);
     bool good = check_equal_matrix(A_accessor, A_ref, layout, n, n, n, n, std::cout);
 
     return (int)good;
 }
 
-class SprTests : public ::testing::TestWithParam<std::tuple<sycl::device *, oneapi::mkl::layout>> {
+class SprTests : public ::testing::TestWithParam<std::tuple<sycl::device*, oneapi::math::layout>> {
 };
 
 TEST_P(SprTests, RealSinglePrecision) {
     float alpha(2.0);
     EXPECT_TRUEORSKIP(test<float>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                  oneapi::mkl::uplo::lower, 30, alpha, 2));
+                                  oneapi::math::uplo::lower, 30, alpha, 2));
     EXPECT_TRUEORSKIP(test<float>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                  oneapi::mkl::uplo::upper, 30, alpha, 2));
+                                  oneapi::math::uplo::upper, 30, alpha, 2));
     EXPECT_TRUEORSKIP(test<float>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                  oneapi::mkl::uplo::lower, 30, alpha, -2));
+                                  oneapi::math::uplo::lower, 30, alpha, -2));
     EXPECT_TRUEORSKIP(test<float>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                  oneapi::mkl::uplo::upper, 30, alpha, -2));
+                                  oneapi::math::uplo::upper, 30, alpha, -2));
     EXPECT_TRUEORSKIP(test<float>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                  oneapi::mkl::uplo::lower, 30, alpha, 1));
+                                  oneapi::math::uplo::lower, 30, alpha, 1));
     EXPECT_TRUEORSKIP(test<float>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                  oneapi::mkl::uplo::upper, 30, alpha, 1));
+                                  oneapi::math::uplo::upper, 30, alpha, 1));
 }
 TEST_P(SprTests, RealDoublePrecision) {
     CHECK_DOUBLE_ON_DEVICE(std::get<0>(GetParam()));
 
     double alpha(2.0);
     EXPECT_TRUEORSKIP(test<double>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                   oneapi::mkl::uplo::lower, 30, alpha, 2));
+                                   oneapi::math::uplo::lower, 30, alpha, 2));
     EXPECT_TRUEORSKIP(test<double>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                   oneapi::mkl::uplo::upper, 30, alpha, 2));
+                                   oneapi::math::uplo::upper, 30, alpha, 2));
     EXPECT_TRUEORSKIP(test<double>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                   oneapi::mkl::uplo::lower, 30, alpha, -2));
+                                   oneapi::math::uplo::lower, 30, alpha, -2));
     EXPECT_TRUEORSKIP(test<double>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                   oneapi::mkl::uplo::upper, 30, alpha, -2));
+                                   oneapi::math::uplo::upper, 30, alpha, -2));
     EXPECT_TRUEORSKIP(test<double>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                   oneapi::mkl::uplo::lower, 30, alpha, 1));
+                                   oneapi::math::uplo::lower, 30, alpha, 1));
     EXPECT_TRUEORSKIP(test<double>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                   oneapi::mkl::uplo::upper, 30, alpha, 1));
+                                   oneapi::math::uplo::upper, 30, alpha, 1));
 }
 
 INSTANTIATE_TEST_SUITE_P(SprTestSuite, SprTests,
                          ::testing::Combine(testing::ValuesIn(devices),
-                                            testing::Values(oneapi::mkl::layout::col_major,
-                                                            oneapi::mkl::layout::row_major)),
+                                            testing::Values(oneapi::math::layout::col_major,
+                                                            oneapi::math::layout::row_major)),
                          ::LayoutDeviceNamePrint());
 
 } // anonymous namespace

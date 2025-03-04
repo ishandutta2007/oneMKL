@@ -1,5 +1,5 @@
 #===============================================================================
-# Copyright 2023 Intel Corporation
+# Copyright 2024 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #===============================================================================
 
-add_custom_target(onemkl_backend_libs_sparse_blas)
-add_dependencies(onemkl_backend_libs onemkl_backend_libs_sparse_blas)
+add_custom_target(onemath_backend_libs_sparse_blas)
+add_dependencies(onemath_backend_libs onemath_backend_libs_sparse_blas)
 
 if(ENABLE_MKLCPU_BACKEND)
   add_subdirectory(mklcpu)
@@ -26,4 +26,12 @@ endif()
 
 if(ENABLE_MKLGPU_BACKEND)
   add_subdirectory(mklgpu)
+endif()
+
+if(ENABLE_CUSPARSE_BACKEND)
+  add_subdirectory(cusparse)
+endif()
+
+if(ENABLE_ROCSPARSE_BACKEND)
+  add_subdirectory(rocsparse)
 endif()

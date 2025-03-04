@@ -29,9 +29,9 @@
 #include <CL/sycl.hpp>
 #endif
 #include "cblas.h"
-#include "oneapi/mkl/detail/config.hpp"
-#include "oneapi/mkl.hpp"
-#include "onemkl_blas_helper.hpp"
+#include "oneapi/math/detail/config.hpp"
+#include "oneapi/math.hpp"
+#include "onemath_blas_helper.hpp"
 #include "reference_blas_templates.hpp"
 #include "test_common.hpp"
 #include "test_helper.hpp"
@@ -41,12 +41,12 @@
 using namespace sycl;
 using std::vector;
 
-extern std::vector<sycl::device *> devices;
+extern std::vector<sycl::device*> devices;
 
 namespace {
 
 template <typename fp, typename fp_scalar>
-int test(device *dev, oneapi::mkl::layout layout) {
+int test(device* dev, oneapi::math::layout layout) {
     // Prepare data.
     fp a, b, s, a_ref, b_ref, s_ref;
     fp_scalar c, c_ref;
@@ -64,17 +64,17 @@ int test(device *dev, oneapi::mkl::layout layout) {
     // Call Reference ROTG.
     using fp_ref = typename ref_type_info<fp>::type;
 
-    ::rotg((fp_ref *)&a_ref, (fp_ref *)&b_ref, (fp_scalar *)&c_ref, (fp_ref *)&s_ref);
+    ::rotg((fp_ref*)&a_ref, (fp_ref*)&b_ref, (fp_scalar*)&c_ref, (fp_ref*)&s_ref);
 
     // Call DPC++ ROTG.
 
     // Catch asynchronous exceptions.
     auto exception_handler = [](exception_list exceptions) {
-        for (std::exception_ptr const &e : exceptions) {
+        for (std::exception_ptr const& e : exceptions) {
             try {
                 std::rethrow_exception(e);
             }
-            catch (exception const &e) {
+            catch (exception const& e) {
                 std::cout << "Caught asynchronous SYCL exception during ROTG:\n"
                           << e.what() << std::endl;
                 print_error_code(e);
@@ -92,51 +92,51 @@ int test(device *dev, oneapi::mkl::layout layout) {
     try {
 #ifdef CALL_RT_API
         switch (layout) {
-            case oneapi::mkl::layout::col_major:
-                oneapi::mkl::blas::column_major::rotg(main_queue, a_buffer, b_buffer, c_buffer,
-                                                      s_buffer);
+            case oneapi::math::layout::col_major:
+                oneapi::math::blas::column_major::rotg(main_queue, a_buffer, b_buffer, c_buffer,
+                                                       s_buffer);
                 break;
-            case oneapi::mkl::layout::row_major:
-                oneapi::mkl::blas::row_major::rotg(main_queue, a_buffer, b_buffer, c_buffer,
-                                                   s_buffer);
+            case oneapi::math::layout::row_major:
+                oneapi::math::blas::row_major::rotg(main_queue, a_buffer, b_buffer, c_buffer,
+                                                    s_buffer);
                 break;
             default: break;
         }
 #else
         switch (layout) {
-            case oneapi::mkl::layout::col_major:
-                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::mkl::blas::column_major::rotg, a_buffer,
-                                        b_buffer, c_buffer, s_buffer);
+            case oneapi::math::layout::col_major:
+                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::math::blas::column_major::rotg,
+                                        a_buffer, b_buffer, c_buffer, s_buffer);
                 break;
-            case oneapi::mkl::layout::row_major:
-                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::mkl::blas::row_major::rotg, a_buffer,
+            case oneapi::math::layout::row_major:
+                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::math::blas::row_major::rotg, a_buffer,
                                         b_buffer, c_buffer, s_buffer);
                 break;
             default: break;
         }
 #endif
     }
-    catch (exception const &e) {
+    catch (exception const& e) {
         std::cout << "Caught synchronous SYCL exception during ROTG:\n" << e.what() << std::endl;
         print_error_code(e);
     }
 
-    catch (const oneapi::mkl::unimplemented &e) {
+    catch (const oneapi::math::unimplemented& e) {
         return test_skipped;
     }
 
-    catch (const std::runtime_error &error) {
+    catch (const std::runtime_error& error) {
         std::cout << "Error raised during execution of ROTG:\n" << error.what() << std::endl;
     }
 
     // Compare the results of reference implementation and DPC++ implementation.
-    auto a_accessor = a_buffer.template get_host_access(read_only);
+    auto a_accessor = a_buffer.get_host_access(read_only);
     bool good_a = check_equal(a_accessor[0], a_ref, 4, std::cout);
-    auto b_accessor = b_buffer.template get_host_access(read_only);
+    auto b_accessor = b_buffer.get_host_access(read_only);
     bool good_b = check_equal(b_accessor[0], b_ref, 4, std::cout);
-    auto s_accessor = s_buffer.template get_host_access(read_only);
+    auto s_accessor = s_buffer.get_host_access(read_only);
     bool good_s = check_equal(s_accessor[0], s_ref, 4, std::cout);
-    auto c_accessor = c_buffer.template get_host_access(read_only);
+    auto c_accessor = c_buffer.get_host_access(read_only);
     bool good_c = check_equal(c_accessor[0], c_ref, 4, std::cout);
 
     bool good = good_a && good_b && good_c && good_s;
@@ -144,7 +144,7 @@ int test(device *dev, oneapi::mkl::layout layout) {
     return (int)good;
 }
 
-class RotgTests : public ::testing::TestWithParam<std::tuple<sycl::device *, oneapi::mkl::layout>> {
+class RotgTests : public ::testing::TestWithParam<std::tuple<sycl::device*, oneapi::math::layout>> {
 };
 
 TEST_P(RotgTests, RealSinglePrecision) {
@@ -180,8 +180,8 @@ TEST_P(RotgTests, ComplexDoublePrecision) {
 
 INSTANTIATE_TEST_SUITE_P(RotgTestSuite, RotgTests,
                          ::testing::Combine(testing::ValuesIn(devices),
-                                            testing::Values(oneapi::mkl::layout::col_major,
-                                                            oneapi::mkl::layout::row_major)),
+                                            testing::Values(oneapi::math::layout::col_major,
+                                                            oneapi::math::layout::row_major)),
                          ::LayoutDeviceNamePrint());
 
 } // anonymous namespace

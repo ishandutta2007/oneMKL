@@ -22,16 +22,16 @@
 #include <unordered_map>
 
 namespace oneapi {
-namespace mkl {
+namespace math {
 namespace lapack {
 namespace cusolver {
 
 template <typename T>
 struct cusolver_handle {
-    using handle_container_t = std::unordered_map<T, std::atomic<cusolverDnHandle_t> *>;
+    using handle_container_t = std::unordered_map<T, std::atomic<cusolverDnHandle_t>*>;
     handle_container_t cusolver_handle_mapper_{};
     ~cusolver_handle() noexcept(false) {
-        for (auto &handle_pair : cusolver_handle_mapper_) {
+        for (auto& handle_pair : cusolver_handle_mapper_) {
             cusolverStatus_t err;
             if (handle_pair.second != nullptr) {
                 auto handle = handle_pair.second->exchange(nullptr);
@@ -55,7 +55,7 @@ struct cusolver_handle {
 
 } // namespace cusolver
 } // namespace lapack
-} // namespace mkl
+} // namespace math
 } // namespace oneapi
 
 #endif // CUSOLVER_HANDLE_HPP

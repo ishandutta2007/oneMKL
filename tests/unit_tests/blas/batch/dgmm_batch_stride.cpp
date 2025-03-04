@@ -31,9 +31,9 @@
 #endif
 #include "allocator_helper.hpp"
 #include "cblas.h"
-#include "oneapi/mkl/detail/config.hpp"
-#include "oneapi/mkl.hpp"
-#include "onemkl_blas_helper.hpp"
+#include "oneapi/math/detail/config.hpp"
+#include "oneapi/math.hpp"
+#include "onemath_blas_helper.hpp"
 #include "reference_blas_templates.hpp"
 #include "test_common.hpp"
 #include "test_helper.hpp"
@@ -43,12 +43,12 @@
 using namespace sycl;
 using std::vector;
 
-extern std::vector<sycl::device *> devices;
+extern std::vector<sycl::device*> devices;
 
 namespace {
 
 template <typename fp>
-int test(device *dev, oneapi::mkl::layout layout, oneapi::mkl::side left_right, int64_t incx,
+int test(device* dev, oneapi::math::layout layout, oneapi::math::side left_right, int64_t incx,
          int64_t batch_size) {
     // Prepare data.
     int64_t m, n;
@@ -61,7 +61,7 @@ int test(device *dev, oneapi::mkl::layout layout, oneapi::mkl::side left_right, 
     lda = 38;
     ldc = 42;
 
-    int x_len = (left_right == oneapi::mkl::side::right) ? n : m;
+    int x_len = (left_right == oneapi::math::side::right) ? n : m;
 
     int64_t stride_a, stride_x, stride_c;
     stride_x = x_len * std::abs(incx);
@@ -73,8 +73,8 @@ int test(device *dev, oneapi::mkl::layout layout, oneapi::mkl::side left_right, 
 
     for (i = 0; i < batch_size; i++) {
         rand_vector(x.data() + stride_x * i, x_len, incx);
-        rand_matrix(A.data() + stride_a * i, layout, oneapi::mkl::transpose::nontrans, m, n, lda);
-        rand_matrix(C.data() + stride_c * i, layout, oneapi::mkl::transpose::nontrans, m, n, ldc);
+        rand_matrix(A.data() + stride_a * i, layout, oneapi::math::transpose::nontrans, m, n, lda);
+        rand_matrix(C.data() + stride_c * i, layout, oneapi::math::transpose::nontrans, m, n, ldc);
     }
 
     C_ref = C;
@@ -90,21 +90,20 @@ int test(device *dev, oneapi::mkl::layout layout, oneapi::mkl::side left_right, 
 
     for (i = 0; i < batch_size_ref; i++) {
         ::dgmm(convert_to_cblas_layout(layout), convert_to_cblas_side(left_right),
-               (const int *)&m_ref, (const int *)&n_ref, (const fp_ref *)(A.data() + stride_a * i),
-               (const int *)&lda_ref, (const fp_ref *)(x.data() + stride_x * i),
-               (const int *)&incx_ref, (fp_ref *)(C_ref.data() + stride_c * i),
-               (const int *)&ldc_ref);
+               (const int*)&m_ref, (const int*)&n_ref, (const fp_ref*)(A.data() + stride_a * i),
+               (const int*)&lda_ref, (const fp_ref*)(x.data() + stride_x * i),
+               (const int*)&incx_ref, (fp_ref*)(C_ref.data() + stride_c * i), (const int*)&ldc_ref);
     }
 
     // Call DPC++ DGMM_BATCH_STRIDE.
 
     // Catch asynchronous exceptions.
     auto exception_handler = [](exception_list exceptions) {
-        for (std::exception_ptr const &e : exceptions) {
+        for (std::exception_ptr const& e : exceptions) {
             try {
                 std::rethrow_exception(e);
             }
-            catch (exception const &e) {
+            catch (exception const& e) {
                 std::cout << "Caught asynchronous SYCL exception during DGMM_BATCH_STRIDE:\n"
                           << e.what() << std::endl;
                 print_error_code(e);
@@ -121,27 +120,27 @@ int test(device *dev, oneapi::mkl::layout layout, oneapi::mkl::side left_right, 
     try {
 #ifdef CALL_RT_API
         switch (layout) {
-            case oneapi::mkl::layout::col_major:
-                oneapi::mkl::blas::column_major::dgmm_batch(main_queue, left_right, m, n, A_buffer,
-                                                            lda, stride_a, x_buffer, incx, stride_x,
-                                                            C_buffer, ldc, stride_c, batch_size);
+            case oneapi::math::layout::col_major:
+                oneapi::math::blas::column_major::dgmm_batch(
+                    main_queue, left_right, m, n, A_buffer, lda, stride_a, x_buffer, incx, stride_x,
+                    C_buffer, ldc, stride_c, batch_size);
                 break;
-            case oneapi::mkl::layout::row_major:
-                oneapi::mkl::blas::row_major::dgmm_batch(main_queue, left_right, m, n, A_buffer,
-                                                         lda, stride_a, x_buffer, incx, stride_x,
-                                                         C_buffer, ldc, stride_c, batch_size);
+            case oneapi::math::layout::row_major:
+                oneapi::math::blas::row_major::dgmm_batch(main_queue, left_right, m, n, A_buffer,
+                                                          lda, stride_a, x_buffer, incx, stride_x,
+                                                          C_buffer, ldc, stride_c, batch_size);
                 break;
             default: break;
         }
 #else
         switch (layout) {
-            case oneapi::mkl::layout::col_major:
-                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::mkl::blas::column_major::dgmm_batch,
+            case oneapi::math::layout::col_major:
+                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::math::blas::column_major::dgmm_batch,
                                         left_right, m, n, A_buffer, lda, stride_a, x_buffer, incx,
                                         stride_x, C_buffer, ldc, stride_c, batch_size);
                 break;
-            case oneapi::mkl::layout::row_major:
-                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::mkl::blas::row_major::dgmm_batch,
+            case oneapi::math::layout::row_major:
+                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::math::blas::row_major::dgmm_batch,
                                         left_right, m, n, A_buffer, lda, stride_a, x_buffer, incx,
                                         stride_x, C_buffer, ldc, stride_c, batch_size);
                 break;
@@ -149,24 +148,24 @@ int test(device *dev, oneapi::mkl::layout layout, oneapi::mkl::side left_right, 
         }
 #endif
     }
-    catch (exception const &e) {
+    catch (exception const& e) {
         std::cout << "Caught synchronous SYCL exception during DGMM_BATCH_STRIDE:\n"
                   << e.what() << std::endl;
         print_error_code(e);
     }
 
-    catch (const oneapi::mkl::unimplemented &e) {
+    catch (const oneapi::math::unimplemented& e) {
         return test_skipped;
     }
 
-    catch (const std::runtime_error &error) {
+    catch (const std::runtime_error& error) {
         std::cout << "Error raised during execution of DGMM_BATCH_STRIDE:\n"
                   << error.what() << std::endl;
     }
 
     // Compare the results of reference implementation and DPC++ implementation.
 
-    auto C_accessor = C_buffer.template get_host_access(read_only);
+    auto C_accessor = C_buffer.get_host_access(read_only);
     bool good = true;
     for (i = 0; i < batch_size; i++) {
         good = good &&
@@ -177,76 +176,76 @@ int test(device *dev, oneapi::mkl::layout layout, oneapi::mkl::side left_right, 
 }
 
 class DgmmBatchStrideTests
-        : public ::testing::TestWithParam<std::tuple<sycl::device *, oneapi::mkl::layout>> {};
+        : public ::testing::TestWithParam<std::tuple<sycl::device*, oneapi::math::layout>> {};
 
 TEST_P(DgmmBatchStrideTests, RealSinglePrecision) {
     EXPECT_TRUEORSKIP(test<float>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                  oneapi::mkl::side::right, 2, 5));
+                                  oneapi::math::side::right, 2, 5));
     EXPECT_TRUEORSKIP(test<float>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                  oneapi::mkl::side::right, -2, 5));
+                                  oneapi::math::side::right, -2, 5));
     EXPECT_TRUEORSKIP(test<float>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                  oneapi::mkl::side::right, 1, 5));
+                                  oneapi::math::side::right, 1, 5));
     EXPECT_TRUEORSKIP(test<float>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                  oneapi::mkl::side::left, 2, 5));
+                                  oneapi::math::side::left, 2, 5));
     EXPECT_TRUEORSKIP(test<float>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                  oneapi::mkl::side::left, -2, 5));
+                                  oneapi::math::side::left, -2, 5));
     EXPECT_TRUEORSKIP(test<float>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                  oneapi::mkl::side::left, 1, 5));
+                                  oneapi::math::side::left, 1, 5));
 }
 
 TEST_P(DgmmBatchStrideTests, RealDoublePrecision) {
     CHECK_DOUBLE_ON_DEVICE(std::get<0>(GetParam()));
 
     EXPECT_TRUEORSKIP(test<double>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                   oneapi::mkl::side::right, 2, 5));
+                                   oneapi::math::side::right, 2, 5));
     EXPECT_TRUEORSKIP(test<double>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                   oneapi::mkl::side::right, -2, 5));
+                                   oneapi::math::side::right, -2, 5));
     EXPECT_TRUEORSKIP(test<double>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                   oneapi::mkl::side::right, 1, 5));
+                                   oneapi::math::side::right, 1, 5));
     EXPECT_TRUEORSKIP(test<double>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                   oneapi::mkl::side::left, 2, 5));
+                                   oneapi::math::side::left, 2, 5));
     EXPECT_TRUEORSKIP(test<double>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                   oneapi::mkl::side::left, -2, 5));
+                                   oneapi::math::side::left, -2, 5));
     EXPECT_TRUEORSKIP(test<double>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                   oneapi::mkl::side::left, 1, 5));
+                                   oneapi::math::side::left, 1, 5));
 }
 
 TEST_P(DgmmBatchStrideTests, ComplexSinglePrecision) {
     EXPECT_TRUEORSKIP(test<std::complex<float>>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                                oneapi::mkl::side::right, 2, 5));
+                                                oneapi::math::side::right, 2, 5));
     EXPECT_TRUEORSKIP(test<std::complex<float>>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                                oneapi::mkl::side::right, -2, 5));
+                                                oneapi::math::side::right, -2, 5));
     EXPECT_TRUEORSKIP(test<std::complex<float>>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                                oneapi::mkl::side::right, 1, 5));
+                                                oneapi::math::side::right, 1, 5));
     EXPECT_TRUEORSKIP(test<std::complex<float>>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                                oneapi::mkl::side::left, 2, 5));
+                                                oneapi::math::side::left, 2, 5));
     EXPECT_TRUEORSKIP(test<std::complex<float>>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                                oneapi::mkl::side::left, -2, 5));
+                                                oneapi::math::side::left, -2, 5));
     EXPECT_TRUEORSKIP(test<std::complex<float>>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                                oneapi::mkl::side::left, 1, 5));
+                                                oneapi::math::side::left, 1, 5));
 }
 
 TEST_P(DgmmBatchStrideTests, ComplexDoublePrecision) {
     CHECK_DOUBLE_ON_DEVICE(std::get<0>(GetParam()));
 
     EXPECT_TRUEORSKIP(test<std::complex<double>>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                                 oneapi::mkl::side::right, 2, 5));
+                                                 oneapi::math::side::right, 2, 5));
     EXPECT_TRUEORSKIP(test<std::complex<double>>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                                 oneapi::mkl::side::right, -2, 5));
+                                                 oneapi::math::side::right, -2, 5));
     EXPECT_TRUEORSKIP(test<std::complex<double>>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                                 oneapi::mkl::side::right, 1, 5));
+                                                 oneapi::math::side::right, 1, 5));
     EXPECT_TRUEORSKIP(test<std::complex<double>>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                                 oneapi::mkl::side::left, 2, 5));
+                                                 oneapi::math::side::left, 2, 5));
     EXPECT_TRUEORSKIP(test<std::complex<double>>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                                 oneapi::mkl::side::left, -2, 5));
+                                                 oneapi::math::side::left, -2, 5));
     EXPECT_TRUEORSKIP(test<std::complex<double>>(std::get<0>(GetParam()), std::get<1>(GetParam()),
-                                                 oneapi::mkl::side::left, 1, 5));
+                                                 oneapi::math::side::left, 1, 5));
 }
 
 INSTANTIATE_TEST_SUITE_P(DgmmBatchStrideTestSuite, DgmmBatchStrideTests,
                          ::testing::Combine(testing::ValuesIn(devices),
-                                            testing::Values(oneapi::mkl::layout::col_major,
-                                                            oneapi::mkl::layout::row_major)),
+                                            testing::Values(oneapi::math::layout::col_major,
+                                                            oneapi::math::layout::row_major)),
                          ::LayoutDeviceNamePrint());
 
 } // anonymous namespace

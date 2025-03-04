@@ -2,7 +2,7 @@
 
 Please include a summary of the change. Please also include relevant
 motivation and context. See
-[contribution guidelines](https://github.com/oneapi-src/oneMKL/blob/master/CONTRIBUTING.md)
+[contribution guidelines](https://github.com/uxlfoundation/oneMath/blob/master/CONTRIBUTING.md)
 for more details. If the change fixes an issue not documented in the project's
 Github issue tracker, please document all steps necessary to reproduce it.
 
@@ -13,7 +13,6 @@ Fixes # (GitHub issue)
 ## All Submissions
 
 - [ ] Do all unit tests pass locally? Attach a log.
-- [ ] Have you formatted the code using clang-format?
 
 ## New interfaces
 

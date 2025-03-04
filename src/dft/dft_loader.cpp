@@ -17,56 +17,56 @@
 * SPDX-License-Identifier: Apache-2.0
 *******************************************************************************/
 
-#include "oneapi/mkl/dft/detail/dft_loader.hpp"
-#include "oneapi/mkl/dft/forward.hpp"
-#include "oneapi/mkl/dft/backward.hpp"
+#include "oneapi/math/dft/detail/dft_loader.hpp"
+#include "oneapi/math/dft/forward.hpp"
+#include "oneapi/math/dft/backward.hpp"
 
 #include "function_table_initializer.hpp"
 #include "dft/function_table.hpp"
-#include "oneapi/mkl/detail/get_device_id.hpp"
+#include "oneapi/math/detail/get_device_id.hpp"
 
-namespace oneapi::mkl::dft::detail {
+namespace oneapi::math::dft::detail {
 
-static oneapi::mkl::detail::table_initializer<mkl::domain::dft, dft_function_table_t>
+static oneapi::math::detail::table_initializer<math::domain::dft, dft_function_table_t>
     function_tables;
 
 template <>
 commit_impl<precision::SINGLE, domain::COMPLEX>* create_commit<precision::SINGLE, domain::COMPLEX>(
     const descriptor<precision::SINGLE, domain::COMPLEX>& desc, sycl::queue& sycl_queue) {
     auto libkey = get_device_id(sycl_queue);
-    return function_tables[libkey].create_commit_sycl_fz(desc, sycl_queue);
+    return function_tables[{ libkey, sycl_queue }].create_commit_sycl_fz(desc, sycl_queue);
 }
 
 template <>
 commit_impl<precision::DOUBLE, domain::COMPLEX>* create_commit<precision::DOUBLE, domain::COMPLEX>(
     const descriptor<precision::DOUBLE, domain::COMPLEX>& desc, sycl::queue& sycl_queue) {
     auto libkey = get_device_id(sycl_queue);
-    return function_tables[libkey].create_commit_sycl_dz(desc, sycl_queue);
+    return function_tables[{ libkey, sycl_queue }].create_commit_sycl_dz(desc, sycl_queue);
 }
 
 template <>
 commit_impl<precision::SINGLE, domain::REAL>* create_commit<precision::SINGLE, domain::REAL>(
     const descriptor<precision::SINGLE, domain::REAL>& desc, sycl::queue& sycl_queue) {
     auto libkey = get_device_id(sycl_queue);
-    return function_tables[libkey].create_commit_sycl_fr(desc, sycl_queue);
+    return function_tables[{ libkey, sycl_queue }].create_commit_sycl_fr(desc, sycl_queue);
 }
 
 template <>
 commit_impl<precision::DOUBLE, domain::REAL>* create_commit<precision::DOUBLE, domain::REAL>(
     const descriptor<precision::DOUBLE, domain::REAL>& desc, sycl::queue& sycl_queue) {
     auto libkey = get_device_id(sycl_queue);
-    return function_tables[libkey].create_commit_sycl_dr(desc, sycl_queue);
+    return function_tables[{ libkey, sycl_queue }].create_commit_sycl_dr(desc, sycl_queue);
 }
 
 template <precision prec, domain dom>
-inline oneapi::mkl::device get_device(descriptor<prec, dom>& desc, const char* func_name) {
+inline oneapi::math::device get_device(descriptor<prec, dom>& desc, const char* func_name) {
     config_value is_committed{ config_value::UNCOMMITTED };
     desc.get_value(config_param::COMMIT_STATUS, &is_committed);
     if (is_committed != config_value::COMMITTED) {
-        throw mkl::invalid_argument("DFT", func_name, "Descriptor not committed.");
+        throw math::invalid_argument("DFT", func_name, "Descriptor not committed.");
     }
     // Committed means that the commit pointer is not null.
     return get_device_id(get_commit(desc)->get_queue());
 }
 
-} // namespace oneapi::mkl::dft::detail
+} // namespace oneapi::math::dft::detail

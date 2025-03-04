@@ -17,8 +17,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #===============================================================================
 
-add_custom_target(onemkl_backend_libs_blas)
-add_dependencies(onemkl_backend_libs onemkl_backend_libs_blas)
+add_custom_target(onemath_backend_libs_blas)
+add_dependencies(onemath_backend_libs onemath_backend_libs_blas)
 
 if(ENABLE_MKLCPU_BACKEND)
   add_subdirectory(mklcpu)
@@ -32,6 +32,10 @@ if(ENABLE_MKLGPU_BACKEND)
   add_subdirectory(mklgpu)
 endif()
 
+if(ENABLE_ARMPL_BACKEND AND UNIX)
+  add_subdirectory(armpl)
+endif()
+
 if(ENABLE_CUBLAS_BACKEND AND UNIX)
   add_subdirectory(cublas)
 endif()
@@ -40,6 +44,6 @@ if(ENABLE_ROCBLAS_BACKEND AND UNIX)
   add_subdirectory(rocblas)
 endif()
 
-if(ENABLE_PORTBLAS_BACKEND AND UNIX)
-  add_subdirectory(portblas)
+if(ENABLE_GENERIC_BLAS_BACKEND AND UNIX)
+  add_subdirectory(generic)
 endif()

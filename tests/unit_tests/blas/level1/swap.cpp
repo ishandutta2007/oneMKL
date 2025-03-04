@@ -29,9 +29,9 @@
 #include <CL/sycl.hpp>
 #endif
 #include "cblas.h"
-#include "oneapi/mkl/detail/config.hpp"
-#include "oneapi/mkl.hpp"
-#include "onemkl_blas_helper.hpp"
+#include "oneapi/math/detail/config.hpp"
+#include "oneapi/math.hpp"
+#include "onemath_blas_helper.hpp"
 #include "reference_blas_templates.hpp"
 #include "test_common.hpp"
 #include "test_helper.hpp"
@@ -46,7 +46,7 @@ extern std::vector<sycl::device*> devices;
 namespace {
 
 template <typename fp>
-int test(device* dev, oneapi::mkl::layout layout, int N, int incx, int incy) {
+int test(device* dev, oneapi::math::layout layout, int N, int incx, int incy) {
     // Prepare data.
     vector<fp> x, x_ref, y, y_ref;
     rand_vector(x, N, incx);
@@ -84,24 +84,24 @@ int test(device* dev, oneapi::mkl::layout layout, int N, int incx, int incy) {
     try {
 #ifdef CALL_RT_API
         switch (layout) {
-            case oneapi::mkl::layout::col_major:
-                oneapi::mkl::blas::column_major::swap(main_queue, N, x_buffer, incx, y_buffer,
-                                                      incy);
+            case oneapi::math::layout::col_major:
+                oneapi::math::blas::column_major::swap(main_queue, N, x_buffer, incx, y_buffer,
+                                                       incy);
                 break;
-            case oneapi::mkl::layout::row_major:
-                oneapi::mkl::blas::row_major::swap(main_queue, N, x_buffer, incx, y_buffer, incy);
+            case oneapi::math::layout::row_major:
+                oneapi::math::blas::row_major::swap(main_queue, N, x_buffer, incx, y_buffer, incy);
                 break;
             default: break;
         }
 #else
         switch (layout) {
-            case oneapi::mkl::layout::col_major:
-                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::mkl::blas::column_major::swap, N,
+            case oneapi::math::layout::col_major:
+                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::math::blas::column_major::swap, N,
                                         x_buffer, incx, y_buffer, incy);
                 break;
-            case oneapi::mkl::layout::row_major:
-                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::mkl::blas::row_major::swap, N, x_buffer,
-                                        incx, y_buffer, incy);
+            case oneapi::math::layout::row_major:
+                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::math::blas::row_major::swap, N,
+                                        x_buffer, incx, y_buffer, incy);
                 break;
             default: break;
         }
@@ -112,7 +112,7 @@ int test(device* dev, oneapi::mkl::layout layout, int N, int incx, int incy) {
         print_error_code(e);
     }
 
-    catch (const oneapi::mkl::unimplemented& e) {
+    catch (const oneapi::math::unimplemented& e) {
         return test_skipped;
     }
 
@@ -122,8 +122,8 @@ int test(device* dev, oneapi::mkl::layout layout, int N, int incx, int incy) {
 
     // Compare the results of reference implementation and DPC++ implementation.
 
-    auto y_accessor = y_buffer.template get_host_access(read_only);
-    auto x_accessor = x_buffer.template get_host_access(read_only);
+    auto y_accessor = y_buffer.get_host_access(read_only);
+    auto x_accessor = x_buffer.get_host_access(read_only);
     bool good_y = check_equal_vector(y_accessor, y_ref, N, incy, N, std::cout);
     bool good_x = check_equal_vector(x_accessor, x_ref, N, incx, N, std::cout);
     bool good = good_x && good_y;
@@ -131,7 +131,7 @@ int test(device* dev, oneapi::mkl::layout layout, int N, int incx, int incy) {
     return (int)good;
 }
 
-class SwapTests : public ::testing::TestWithParam<std::tuple<sycl::device*, oneapi::mkl::layout>> {
+class SwapTests : public ::testing::TestWithParam<std::tuple<sycl::device*, oneapi::math::layout>> {
 };
 
 TEST_P(SwapTests, RealSinglePrecision) {
@@ -167,8 +167,8 @@ TEST_P(SwapTests, ComplexDoublePrecision) {
 
 INSTANTIATE_TEST_SUITE_P(SwapTestSuite, SwapTests,
                          ::testing::Combine(testing::ValuesIn(devices),
-                                            testing::Values(oneapi::mkl::layout::col_major,
-                                                            oneapi::mkl::layout::row_major)),
+                                            testing::Values(oneapi::math::layout::col_major,
+                                                            oneapi::math::layout::row_major)),
                          ::LayoutDeviceNamePrint());
 
 } // anonymous namespace

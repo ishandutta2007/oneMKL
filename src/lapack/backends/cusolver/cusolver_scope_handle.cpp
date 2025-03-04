@@ -24,7 +24,7 @@
 #endif
 
 namespace oneapi {
-namespace mkl {
+namespace math {
 namespace lapack {
 namespace cusolver {
 
@@ -35,11 +35,16 @@ namespace cusolver {
  * takes place if no other element in the container has a key equivalent to
  * the one being emplaced (keys in a map container are unique).
  */
+#ifdef ONEMATH_PI_INTERFACE_REMOVED
+thread_local cusolver_handle<ur_context_handle_t> CusolverScopedContextHandler::handle_helper =
+    cusolver_handle<ur_context_handle_t>{};
+#else
 thread_local cusolver_handle<pi_context> CusolverScopedContextHandler::handle_helper =
     cusolver_handle<pi_context>{};
+#endif
 
 CusolverScopedContextHandler::CusolverScopedContextHandler(sycl::queue queue,
-                                                           sycl::interop_handle &ih)
+                                                           sycl::interop_handle& ih)
         : ih(ih),
           needToRecover_(false) {
     placedContext_ = new sycl::context(queue.get_context());
@@ -69,8 +74,8 @@ CusolverScopedContextHandler::~CusolverScopedContextHandler() noexcept(false) {
     delete placedContext_;
 }
 
-void ContextCallback(void *userData) {
-    auto *ptr = static_cast<std::atomic<cusolverDnHandle_t> *>(userData);
+void ContextCallback(void* userData) {
+    auto* ptr = static_cast<std::atomic<cusolverDnHandle_t>*>(userData);
     if (!ptr) {
         return;
     }
@@ -88,12 +93,16 @@ void ContextCallback(void *userData) {
     }
 }
 
-cusolverDnHandle_t CusolverScopedContextHandler::get_handle(const sycl::queue &queue) {
+cusolverDnHandle_t CusolverScopedContextHandler::get_handle(const sycl::queue& queue) {
     auto cudaDevice = ih.get_native_device<sycl::backend::ext_oneapi_cuda>();
     CUresult cuErr;
     CUcontext desired;
     CUDA_ERROR_FUNC(cuDevicePrimaryCtxRetain, cuErr, &desired, cudaDevice);
+#ifdef ONEMATH_PI_INTERFACE_REMOVED
+    auto piPlacedContext_ = reinterpret_cast<ur_context_handle_t>(desired);
+#else
     auto piPlacedContext_ = reinterpret_cast<pi_context>(desired);
+#endif
     CUstream streamId = get_stream(queue);
     cusolverStatus_t err;
     auto it = handle_helper.cusolver_handle_mapper_.find(piPlacedContext_);
@@ -131,14 +140,14 @@ cusolverDnHandle_t CusolverScopedContextHandler::get_handle(const sycl::queue &q
     return handle;
 }
 
-CUstream CusolverScopedContextHandler::get_stream(const sycl::queue &queue) {
+CUstream CusolverScopedContextHandler::get_stream(const sycl::queue& queue) {
     return sycl::get_native<sycl::backend::ext_oneapi_cuda>(queue);
 }
-sycl::context CusolverScopedContextHandler::get_context(const sycl::queue &queue) {
+sycl::context CusolverScopedContextHandler::get_context(const sycl::queue& queue) {
     return queue.get_context();
 }
 
 } // namespace cusolver
 } // namespace lapack
-} // namespace mkl
+} // namespace math
 } // namespace oneapi

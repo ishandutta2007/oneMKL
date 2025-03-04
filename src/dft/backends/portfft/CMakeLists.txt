@@ -36,7 +36,10 @@ if (IS_DPCPP AND UNIX AND NOT FOUND_TARGETS)
   set(TARGETS_LINK_OPTIONS -fsycl-unnamed-lambda)
 
   # spir64 must be last in the list due to a bug in dpcpp 2024.0.0
-  set(TARGETS_TRIPLES "nvptx64-nvidia-cuda,spir64")
+  set(TARGETS_TRIPLES "spir64")
+  if(dpcpp_supports_nvptx64)
+    set(TARGETS_TRIPLES nvptx64-nvidia-cuda,${TARGETS_TRIPLES})
+  endif()
 
   if (NOT (HIP_TARGETS STREQUAL ""))
     set(TARGETS_TRIPLES amdgcn-amd-amdhsa,${TARGETS_TRIPLES})
@@ -46,23 +49,26 @@ if (IS_DPCPP AND UNIX AND NOT FOUND_TARGETS)
     message(WARNING "Can't enable hip backend, HIP_TARGETS has not been set.")
   endif()
 
+  message(STATUS "portFFT target triple set to ${TARGETS_TRIPLES}")
+
   list(APPEND TARGETS_COMPILE_OPTIONS -fsycl-targets=${TARGETS_TRIPLES})
   list(APPEND TARGETS_LINK_OPTIONS -fsycl-targets=${TARGETS_TRIPLES})
 
-  target_compile_options(ONEMKL::SYCL::SYCL INTERFACE ${TARGETS_COMPILE_OPTIONS})
-  target_link_options(ONEMKL::SYCL::SYCL INTERFACE ${TARGETS_LINK_OPTIONS})
+  target_compile_options(ONEMATH::SYCL::SYCL INTERFACE ${TARGETS_COMPILE_OPTIONS})
+  target_link_options(ONEMATH::SYCL::SYCL INTERFACE ${TARGETS_LINK_OPTIONS})
 endif()
 
-set(LIB_NAME onemkl_dft_portfft)
+set(LIB_NAME onemath_dft_portfft)
 set(LIB_OBJ ${LIB_NAME}_obj)
 
 add_library(${LIB_NAME})
+add_deprecated_library(${LIB_NAME})
 add_library(${LIB_OBJ} OBJECT
   descriptor.cpp
   commit.cpp
-  $<$<BOOL:${BUILD_SHARED_LIBS}>: mkl_dft_portfft_wrappers.cpp>
+  $<$<BOOL:${BUILD_SHARED_LIBS}>: portfft_wrappers.cpp>
 )
-add_dependencies(onemkl_backend_libs_dft ${LIB_NAME})
+add_dependencies(onemath_backend_libs_dft ${LIB_NAME})
 
 find_package(portfft QUIET)
 if (NOT portfft_FOUND)
@@ -73,7 +79,7 @@ if (NOT portfft_FOUND)
 	FetchContent_Declare(
 		portfft
 		GIT_REPOSITORY https://github.com/codeplaysoftware/portFFT.git
-		GIT_TAG        e4251e8ef89a8ac4d851a4cc08a0577a28f953e0
+		GIT_TAG        f29d8e7c103f8b981f719e1194199ca4d5216895
 	)
 	FetchContent_MakeAvailable(portfft)
 	message(STATUS "portFFT - downloaded")
@@ -83,27 +89,30 @@ else()
 	target_link_libraries(${LIB_OBJ} PRIVATE portfft::portfft)
 endif()
 
-target_link_libraries(${LIB_OBJ} PRIVATE onemkl_warnings)
+target_link_libraries(${LIB_OBJ} PRIVATE onemath_warnings)
 
 target_include_directories(${LIB_OBJ}
-  PRIVATE ${PROJECT_SOURCE_DIR}/include
+  PUBLIC  ${ONEMATH_INCLUDE_DIRS}
+  PRIVATE ${PROJECT_SOURCE_DIR}/src/include
           ${PROJECT_SOURCE_DIR}/src
           ${CMAKE_BINARY_DIR}/bin
+          ${ONEMATH_GENERATED_INCLUDE_PATH}
 )
 
-target_compile_options(${LIB_OBJ} PRIVATE ${ONEMKL_BUILD_COPT})
+target_compile_options(${LIB_OBJ} PRIVATE ${ONEMATH_BUILD_COPT})
 
-target_link_libraries(${LIB_OBJ} PUBLIC ONEMKL::SYCL::SYCL)
+target_link_libraries(${LIB_OBJ} PUBLIC ONEMATH::SYCL::SYCL)
 
 set_target_properties(${LIB_OBJ} PROPERTIES
   POSITION_INDEPENDENT_CODE ON
 )
-target_link_libraries(${LIB_NAME} PUBLIC ${LIB_OBJ})
+target_link_libraries(${LIB_NAME} PRIVATE ${LIB_OBJ})
+target_include_directories(${LIB_NAME} PUBLIC ${ONEMATH_INCLUDE_DIRS})
 
-#Set oneMKL libraries as not transitive for dynamic
+#Set oneMath libraries as not transitive for dynamic
 if(BUILD_SHARED_LIBS)
   set_target_properties(${LIB_NAME} PROPERTIES
-    INTERFACE_LINK_LIBRARIES ONEMKL::SYCL::SYCL
+    INTERFACE_LINK_LIBRARIES ONEMATH::SYCL::SYCL
   )
 endif()
 
@@ -116,8 +125,8 @@ set_target_properties(${LIB_NAME} PROPERTIES
 list(APPEND CMAKE_BUILD_RPATH $<TARGET_FILE_DIR:${LIB_NAME}>)
 
 # Add the library to install package
-install(TARGETS ${LIB_OBJ} EXPORT oneMKLTargets)
-install(TARGETS ${LIB_NAME} EXPORT oneMKLTargets
+install(TARGETS ${LIB_OBJ} EXPORT oneMathTargets)
+install(TARGETS ${LIB_NAME} EXPORT oneMathTargets
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib

@@ -17,21 +17,18 @@
 # SPDX-License-Identifier: Apache-2.0
 #===============================================================================
 
-# NOTE: user needs to set env var SYCL_DEVICE_FILTER to use runtime example (no need to specify backend when building with CMake)
-
-# Build object from all example sources
-set(RNG_DEVICE_SOURCES "uniform")
+# NOTE: user needs to set env var ONEAPI_DEVICE_SELECTOR to use runtime example (no need to specify backend when building with CMake)
 
 # Set up for the right backend for run-time dispatching examples
 # If users build more than one backend (i.e. mklcpu and mklgpu, or mklcpu and CUDA), they may need to
-# overwrite SYCL_DEVICE_FILTER in their environment to run on the desired backend
+# overwrite ONEAPI_DEVICE_SELECTOR in their environment to run on the desired backend
 set(DEVICE_FILTERS "")
 if(ENABLE_MKLCPU_BACKEND)
-  list(APPEND DEVICE_FILTERS "cpu")
+  list(APPEND DEVICE_FILTERS "opencl:cpu")
 endif()
 # RNG only supports mklcpu backend on Windows
 if(ENABLE_MKLGPU_BACKEND)
-  list(APPEND DEVICE_FILTERS "gpu")
+  list(APPEND DEVICE_FILTERS "level_zero:gpu")
 endif()
 if(ENABLE_CURAND_BACKEND)
   list(APPEND DEVICE_FILTERS "cuda:gpu")
@@ -40,31 +37,42 @@ if(ENABLE_ROCRAND_BACKEND)
   list(APPEND DEVICE_FILTERS "hip:gpu")
 endif()
 
-message(STATUS "SYCL_DEVICE_FILTER will be set to the following value(s): [${DEVICE_FILTERS}] for run-time dispatching examples")
+message(STATUS "ONEAPI_DEVICE_SELECTOR will be set to the following value(s): [${DEVICE_FILTERS}] for run-time dispatching examples")
 
-foreach(rng_device_source ${RNG_DEVICE_SOURCES})
-  add_executable(example_${domain}_${rng_device_source} ${rng_device_source}.cpp)
-  target_include_directories(example_${domain}_${rng_device_source}
-      PUBLIC ${PROJECT_SOURCE_DIR}/examples/rng/device/include
-      PUBLIC ${PROJECT_SOURCE_DIR}/examples/include
-      PUBLIC ${PROJECT_SOURCE_DIR}/include
-      PUBLIC ${CMAKE_BINARY_DIR}/bin
-  )
+set(EXAMPLE_TARGET example_rng_uniform)
 
-  if (USE_ADD_SYCL_TO_TARGET_INTEGRATION)
-    add_sycl_to_target(TARGET example_${domain}_${rng_device_source} SOURCES ${RNG_DEVICE_SOURCES})
-  endif()
+# External applications should use find_package or FetchContent to include oneMath first.
+# See https://github.com/uxlfoundation/oneMath/blob/develop/docs/using_onemath_with_cmake.rst
 
-  target_link_libraries(example_${domain}_${rng_device_source} PUBLIC
-      ONEMKL::SYCL::SYCL
-  )
+# Create a CMake target with one source file
+add_executable(${EXAMPLE_TARGET} uniform.cpp)
 
-  # Register example as ctest
-  foreach(device_filter ${DEVICE_FILTERS})
-    add_test(NAME ${domain}/EXAMPLE/DEVICE/${rng_device_source}/${device_filter} COMMAND example_${domain}_${rng_device_source})
-    set_property(TEST ${domain}/EXAMPLE/DEVICE/${rng_device_source}/${device_filter} PROPERTY
-      ENVIRONMENT LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/lib:$ENV{LD_LIBRARY_PATH}
-      ENVIRONMENT SYCL_DEVICE_FILTER=${device_filter})
-  endforeach(device_filter)
+# Include directories specific to the examples
+# The device example is header only
+target_include_directories(${EXAMPLE_TARGET} PUBLIC
+  ${PROJECT_SOURCE_DIR}/examples/rng/device/include
+  ${PROJECT_SOURCE_DIR}/examples/include
+  ${PROJECT_SOURCE_DIR}/include
+  ${PROJECT_SOURCE_DIR}/bin
+)
 
-endforeach()
+# May be needed to compile source files with SYCL kernels
+if (USE_ADD_SYCL_TO_TARGET_INTEGRATION)
+  add_sycl_to_target(TARGET ${EXAMPLE_TARGET} SOURCES uniform.cpp)
+endif()
+
+target_link_libraries(${EXAMPLE_TARGET} PUBLIC ONEMATH::SYCL::SYCL)
+
+if(NOT ${ONEMATH_SYCL_IMPLEMENTATION} STREQUAL "hipsycl")
+  # set strict warning flags for rng device API examples
+  target_compile_options(${EXAMPLE_TARGET} PUBLIC -Wall -Werror -Wextra -Wpedantic -Wunreachable-code -Wfloat-conversion -Wextra-semi -Wshadow)
+  target_link_options(${EXAMPLE_TARGET} PUBLIC -fsycl -fsycl-device-code-split=per_kernel)
+endif()
+
+# Register example as ctest
+foreach(device_filter ${DEVICE_FILTERS})
+  add_test(NAME rng/EXAMPLE/DEVICE/uniform/${device_filter} COMMAND ${EXAMPLE_TARGET})
+  # Set ONEAPI_DEVICE_SELECTOR environment variable to select a device at runtime
+  set_property(TEST rng/EXAMPLE/DEVICE/uniform/${device_filter} PROPERTY
+    ENVIRONMENT ONEAPI_DEVICE_SELECTOR=${device_filter})
+endforeach(device_filter)

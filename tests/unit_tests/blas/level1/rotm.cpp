@@ -29,9 +29,9 @@
 #include <CL/sycl.hpp>
 #endif
 #include "cblas.h"
-#include "oneapi/mkl/detail/config.hpp"
-#include "oneapi/mkl.hpp"
-#include "onemkl_blas_helper.hpp"
+#include "oneapi/math/detail/config.hpp"
+#include "oneapi/math.hpp"
+#include "onemath_blas_helper.hpp"
 #include "reference_blas_templates.hpp"
 #include "test_common.hpp"
 #include "test_helper.hpp"
@@ -41,12 +41,12 @@
 using namespace sycl;
 using std::vector;
 
-extern std::vector<sycl::device *> devices;
+extern std::vector<sycl::device*> devices;
 
 namespace {
 
 template <typename fp>
-int test(device *dev, oneapi::mkl::layout layout, int N, int incx, int incy, fp flag) {
+int test(device* dev, oneapi::math::layout layout, int N, int incx, int incy, fp flag) {
     // Prepare data.
     vector<fp> x, x_ref, y, y_ref;
     vector<fp> param;
@@ -61,18 +61,18 @@ int test(device *dev, oneapi::mkl::layout layout, int N, int incx, int incy, fp 
     using fp_ref = typename ref_type_info<fp>::type;
     const int N_ref = N, incx_ref = incx, incy_ref = incy;
 
-    ::rotm(&N_ref, (fp_ref *)x_ref.data(), &incx_ref, (fp_ref *)y_ref.data(), &incy_ref,
-           (fp_ref *)param.data());
+    ::rotm(&N_ref, (fp_ref*)x_ref.data(), &incx_ref, (fp_ref*)y_ref.data(), &incy_ref,
+           (fp_ref*)param.data());
 
     // Call DPC++ ROTM.
 
     // Catch asynchronous exceptions.
     auto exception_handler = [](exception_list exceptions) {
-        for (std::exception_ptr const &e : exceptions) {
+        for (std::exception_ptr const& e : exceptions) {
             try {
                 std::rethrow_exception(e);
             }
-            catch (exception const &e) {
+            catch (exception const& e) {
                 std::cout << "Caught asynchronous SYCL exception during ROTM:\n"
                           << e.what() << std::endl;
                 print_error_code(e);
@@ -89,54 +89,54 @@ int test(device *dev, oneapi::mkl::layout layout, int N, int incx, int incy, fp 
     try {
 #ifdef CALL_RT_API
         switch (layout) {
-            case oneapi::mkl::layout::col_major:
-                oneapi::mkl::blas::column_major::rotm(main_queue, N, x_buffer, incx, y_buffer, incy,
-                                                      param_buffer);
+            case oneapi::math::layout::col_major:
+                oneapi::math::blas::column_major::rotm(main_queue, N, x_buffer, incx, y_buffer,
+                                                       incy, param_buffer);
                 break;
-            case oneapi::mkl::layout::row_major:
-                oneapi::mkl::blas::row_major::rotm(main_queue, N, x_buffer, incx, y_buffer, incy,
-                                                   param_buffer);
+            case oneapi::math::layout::row_major:
+                oneapi::math::blas::row_major::rotm(main_queue, N, x_buffer, incx, y_buffer, incy,
+                                                    param_buffer);
                 break;
             default: break;
         }
 #else
         switch (layout) {
-            case oneapi::mkl::layout::col_major:
-                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::mkl::blas::column_major::rotm, N,
+            case oneapi::math::layout::col_major:
+                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::math::blas::column_major::rotm, N,
                                         x_buffer, incx, y_buffer, incy, param_buffer);
                 break;
-            case oneapi::mkl::layout::row_major:
-                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::mkl::blas::row_major::rotm, N, x_buffer,
-                                        incx, y_buffer, incy, param_buffer);
+            case oneapi::math::layout::row_major:
+                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::math::blas::row_major::rotm, N,
+                                        x_buffer, incx, y_buffer, incy, param_buffer);
                 break;
             default: break;
         }
 #endif
     }
-    catch (exception const &e) {
+    catch (exception const& e) {
         std::cout << "Caught synchronous SYCL exception during ROTM:\n" << e.what() << std::endl;
         print_error_code(e);
     }
 
-    catch (const oneapi::mkl::unimplemented &e) {
+    catch (const oneapi::math::unimplemented& e) {
         return test_skipped;
     }
 
-    catch (const std::runtime_error &error) {
+    catch (const std::runtime_error& error) {
         std::cout << "Error raised during execution of ROTM:\n" << error.what() << std::endl;
     }
 
     // Compare the results of reference implementation and DPC++ implementation.
-    auto x_accessor = x_buffer.template get_host_access(read_only);
+    auto x_accessor = x_buffer.get_host_access(read_only);
     bool good_x = check_equal_vector(x_accessor, x_ref, N, incx, N, std::cout);
-    auto y_accessor = y_buffer.template get_host_access(read_only);
+    auto y_accessor = y_buffer.get_host_access(read_only);
     bool good_y = check_equal_vector(y_accessor, y_ref, N, incy, N, std::cout);
     bool good = good_x && good_y;
 
     return (int)good;
 }
 
-class RotmTests : public ::testing::TestWithParam<std::tuple<sycl::device *, oneapi::mkl::layout>> {
+class RotmTests : public ::testing::TestWithParam<std::tuple<sycl::device*, oneapi::math::layout>> {
 };
 
 TEST_P(RotmTests, RealSinglePrecision) {
@@ -204,8 +204,8 @@ TEST_P(RotmTests, RealDoublePrecision) {
 
 INSTANTIATE_TEST_SUITE_P(RotmTestSuite, RotmTests,
                          ::testing::Combine(testing::ValuesIn(devices),
-                                            testing::Values(oneapi::mkl::layout::col_major,
-                                                            oneapi::mkl::layout::row_major)),
+                                            testing::Values(oneapi::math::layout::col_major,
+                                                            oneapi::math::layout::row_major)),
                          ::LayoutDeviceNamePrint());
 
 } // anonymous namespace

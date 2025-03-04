@@ -1,21 +1,18 @@
-# oneAPI Math Kernel Library (oneMKL) Interfaces Examples 
-oneAPI Math Kernel Library (oneMKL) Interfaces offers examples with the following routines: 
-- blas: level3/gemm_usm  
-- rng: uniform_usm  
+# oneMath Examples
+oneMath offers examples with the following routines:
+- blas: level3/gemm_usm
+- rng: uniform_usm
 - lapack: getrs_usm
-- dft: complex_fwd_buffer, real_fwd_usm
-- sparse_blas: sparse_gemv_usm
+- dft: complex_fwd_usm, real_fwd_usm
+- sparse_blas: sparse_spmv_usm
 
 Each routine has one run-time dispatching example and one compile-time dispatching example (which uses both mklcpu and cuda backends), located in `example/<$domain>/run_time_dispatching` and `example/<$domain>/compile_time_dispatching` subfolders, respectively.
 
-To build examples, use cmake build option `-DBUILD_EXAMPLES=true`.  
+To build examples, use cmake build option `-DBUILD_EXAMPLES=true`.
 Compile_time_dispatching will be built if `-DBUILD_EXAMPLES=true` and cuda backend is enabled, because the compile-time dispatching example runs on both mklcpu and cuda backends.
 Run_time_dispatching will be built if `-DBUILD_EXAMPLES=true` and `-DBUILD_SHARED_LIBS=true`.
-All DFT examples require the mklgpu backend to be enabled.
 
-The example executable naming convention follows `example_<$domain>_<$routine>_<$backend>` for compile-time dispatching examples 
-  or `example_<$domain>_<$routine>` for run-time dispatching examples. 
-  E.g. `example_blas_gemm_usm_mklcpu_cublas `  `example_blas_gemm_usm`
+The example executable naming convention follows `example_<$domain>_<$routine>_<$backend>` for compile-time dispatching examples or `example_<$domain>_<$routine>` for run-time dispatching examples. E.g. `example_blas_gemm_usm_mklcpu_cublas `  `example_blas_gemm_usm`
 
 ## Example outputs (blas, rng, lapack, dft, sparse_blas)
   
@@ -23,7 +20,7 @@ The example executable naming convention follows `example_<$domain>_<$routine>_<
 
 Run-time dispatching examples with mklcpu backend
 ```
-$ export SYCL_DEVICE_FILTER=cpu
+$ export ONEAPI_DEVICE_SELECTOR="opencl:cpu"
 $ ./bin/example_blas_gemm_usm
 
 ########################################################################
@@ -40,8 +37,8 @@ $ ./bin/example_blas_gemm_usm
 # Using single precision (float) data type
 #
 # Device will be selected during runtime.
-# The environment variable SYCL_DEVICE_FILTER can be used to specify
-# SYCL device
+# The environment variable ONEAPI_DEVICE_SELECTOR can be used to specify
+# available devices
 #
 ########################################################################
 
@@ -76,7 +73,7 @@ BLAS GEMM USM example ran OK.
 ```
 Run-time dispatching examples with mklgpu backend
 ```
-$ export SYCL_DEVICE_FILTER=gpu
+$ export ONEAPI_DEVICE_SELECTOR="level_zero:gpu"
 $ ./bin/example_blas_gemm_usm
 
 ########################################################################
@@ -93,8 +90,8 @@ $ ./bin/example_blas_gemm_usm
 # Using single precision (float) data type
 #
 # Device will be selected during runtime.
-# The environment variable SYCL_DEVICE_FILTER can be used to specify
-# SYCL device
+# The environment variable ONEAPI_DEVICE_SELECTOR can be used to specify
+# available devices
 #
 ########################################################################
 
@@ -188,7 +185,7 @@ BLAS GEMM USM example ran OK on MKLCPU and CUBLAS
 ## lapack 
 Run-time dispatching example with mklgpu backend:
 ```
-$ export SYCL_DEVICE_FILTER=gpu
+$ export ONEAPI_DEVICE_SELECTOR="level_zero:gpu"
 $ ./bin/example_lapack_getrs_usm
 
 ########################################################################
@@ -206,8 +203,8 @@ $ ./bin/example_lapack_getrs_usm
 # Using single precision (float) data type
 #
 # Device will be selected during runtime.
-# The environment variable SYCL_DEVICE_FILTER can be used to specify
-# SYCL device
+# The environment variable ONEAPI_DEVICE_SELECTOR can be used to specify
+# available devices
 #
 ########################################################################
 
@@ -289,7 +286,7 @@ LAPACK GETRS USM example ran OK on MKLCPU and CUSOLVER
 ## rng
 Run-time dispatching example with mklgpu backend:
 ```
-$ export SYCL_DEVICE_FILTER=gpu
+$ export ONEAPI_DEVICE_SELECTOR="level_zero:gpu"
 $ ./bin/example_rng_uniform_usm
 
 ########################################################################
@@ -302,8 +299,8 @@ $ ./bin/example_rng_uniform_usm
 # Using single precision (float) data type
 #
 # Device will be selected during runtime.
-# The environment variable SYCL_DEVICE_FILTER can be used to specify
-# SYCL device
+# The environment variable ONEAPI_DEVICE_SELECTOR can be used to specify
+# available devices
 #
 ########################################################################
 
@@ -357,7 +354,7 @@ Random number generator example with uniform distribution ran OK on MKLCPU and C
 Compile-time dispatching example with MKLGPU backend
 
 ```none
-$ SYCL_DEVICE_FILTER=gpu ./bin/example_dft_complex_fwd_buffer_mklgpu
+$ ONEAPI_DEVICE_SELECTOR="level_zero:gpu" ./bin/example_dft_complex_fwd_buffer_mklgpu
 
 ########################################################################
 # Complex out-of-place forward transform for Buffer API's example:
@@ -370,8 +367,8 @@ $ SYCL_DEVICE_FILTER=gpu ./bin/example_dft_complex_fwd_buffer_mklgpu
 #
 # For Intel GPU with Intel MKLGPU backend.
 #
-# The environment variable SYCL_DEVICE_FILTER can be used to specify
-# SYCL device
+# The environment variable ONEAPI_DEVICE_SELECTOR can be used to specify
+# available devices
 ########################################################################
 
 Running DFT Complex forward out-of-place buffer example
@@ -384,7 +381,7 @@ DFT Complex USM example ran OK on MKLGPU
 Runtime dispatching example with MKLGPU, cuFFT, rocFFT and portFFT backends:
 
 ```none
-$ SYCL_DEVICE_FILTER=gpu ./bin/example_dft_real_fwd_usm
+$ ONEAPI_DEVICE_SELECTOR="level_zero:gpu" ./bin/example_dft_real_fwd_usm
 
 ########################################################################
 # DFT complex in-place forward transform with USM API example:
@@ -396,8 +393,8 @@ $ SYCL_DEVICE_FILTER=gpu ./bin/example_dft_real_fwd_usm
 # Using single precision (float) data type
 #
 # Device will be selected during runtime.
-# The environment variable SYCL_DEVICE_FILTER can be used to specify
-# SYCL device
+# The environment variable ONEAPI_DEVICE_SELECTOR can be used to specify
+# available devices
 #
 ########################################################################
 
@@ -409,7 +406,7 @@ DFT example ran OK
 ```
 
 ```none
-$ SYCL_DEVICE_FILTER=gpu ./bin/example_dft_real_fwd_usm
+$ ONEAPI_DEVICE_SELECTOR="level_zero:gpu" ./bin/example_dft_real_fwd_usm
 
 ########################################################################
 # DFT complex in-place forward transform with USM API example:
@@ -421,8 +418,8 @@ $ SYCL_DEVICE_FILTER=gpu ./bin/example_dft_real_fwd_usm
 # Using single precision (float) data type
 #
 # Device will be selected during runtime.
-# The environment variable SYCL_DEVICE_FILTER can be used to specify
-# SYCL device
+# The environment variable ONEAPI_DEVICE_SELECTOR can be used to specify
+# available devices
 #
 ########################################################################
 
@@ -446,8 +443,8 @@ $ ./bin/example_dft_real_fwd_usm
 # Using single precision (float) data type
 #
 # Device will be selected during runtime.
-# The environment variable SYCL_DEVICE_FILTER can be used to specify
-# SYCL device
+# The environment variable ONEAPI_DEVICE_SELECTOR can be used to specify
+# available devices
 #
 ########################################################################
 
@@ -470,8 +467,8 @@ $ LD_LIBRARY_PATH=lib/:$LD_LIBRARY_PATH ./bin/example_dft_real_fwd_usm
 # Using single precision (float) data type
 #
 # Device will be selected during runtime.
-# The environment variable SYCL_DEVICE_FILTER can be used to specify
-# SYCL device
+# The environment variable ONEAPI_DEVICE_SELECTOR can be used to specify
+# available devices
 #
 ########################################################################
 
@@ -480,119 +477,127 @@ Device name is: Intel(R) UHD Graphics 750
 Running with single precision real data type:
 DFT example run_time dispatch
 Unsupported Configuration:
-	oneMKL: dft/backends/portfft/commit: function is not implemented portFFT only supports complex to complex transforms
+	oneMath: dft/backends/portfft/commit: function is not implemented REAL domain is unsupported
 ```
 
 ## sparse_blas
 
 Run-time dispatching examples with mklcpu backend
 ```
-$ export SYCL_DEVICE_FILTER=cpu
-$ ./bin/example_sparse_blas_gemv_usm
+$ export ONEAPI_DEVICE_SELECTOR="opencl:cpu"
+$ ./bin/example_sparse_blas_spmv_usm
 
 ########################################################################
-# Sparse Matrix-Vector Multiply Example: 
-# 
+# Sparse Matrix-Vector Multiply Example:
+#
 # y = alpha * op(A) * x + beta * y
-# 
+#
 # where A is a sparse matrix in CSR format, x and y are dense vectors
 # and alpha, beta are floating point type precision scalars.
-# 
+#
 # Using apis:
-#   sparse::gemv
-# 
+#   sparse::spmv
+#
 # Using single precision (float) data type
-# 
+#
 # Device will be selected during runtime.
-# The environment variable SYCL_DEVICE_FILTER can be used to specify
-# SYCL device
-# 
+# The environment variable ONEAPI_DEVICE_SELECTOR can be used to specify
+# available devices
+#
 ########################################################################
 
-Running Sparse BLAS GEMV USM example on CPU device.
-Device name is: Intel(R) Core(TM) i7-6700K CPU @ 4.00GHz
+Running Sparse BLAS SPMV USM example on CPU device.
+Device name is: Intel(R) Xeon(R) Gold 6326 CPU @ 2.90GHz
 Running with single precision real data type:
 
-		sparse::gemv parameters:
-			transA = nontrans
-			nrows = 64
-			alpha = 1, beta = 0
+                sparse::spmv parameters:
+                        transA = nontrans
+                        nrows = 64
+                        alpha = 1, beta = 0
 
-		 sparse::gemv example passed
-	Finished
-Sparse BLAS GEMV USM example ran OK.
+                 sparse::spmv example passed
+        Finished
+Sparse BLAS SPMV USM example ran OK.
 ```
 
 Run-time dispatching examples with mklgpu backend
 ```
-$ export SYCL_DEVICE_FILTER=gpu
-$ ./bin/example_sparse_blas_gemv_usm
+$ export ONEAPI_DEVICE_SELECTOR="level_zero:gpu"
+$ ./bin/example_sparse_blas_spmv_usm
 
 ########################################################################
-# Sparse Matrix-Vector Multiply Example: 
-# 
+# Sparse Matrix-Vector Multiply Example:
+#
 # y = alpha * op(A) * x + beta * y
-# 
+#
 # where A is a sparse matrix in CSR format, x and y are dense vectors
 # and alpha, beta are floating point type precision scalars.
-# 
+#
 # Using apis:
-#   sparse::gemv
-# 
+#   sparse::spmv
+#
 # Using single precision (float) data type
-# 
+#
 # Device will be selected during runtime.
-# The environment variable SYCL_DEVICE_FILTER can be used to specify
-# SYCL device
-# 
+# The environment variable ONEAPI_DEVICE_SELECTOR can be used to specify
+# available devices
+#
 ########################################################################
 
-Running Sparse BLAS GEMV USM example on GPU device.
+Running Sparse BLAS SPMV USM example on GPU device.
 Device name is: Intel(R) HD Graphics 530 [0x1912]
 Running with single precision real data type:
 
-		sparse::gemv parameters:
-			transA = nontrans
-			nrows = 64
-			alpha = 1, beta = 0
+                sparse::spmv parameters:
+                        transA = nontrans
+                        nrows = 64
+                        alpha = 1, beta = 0
 
-		 sparse::gemv example passed
-	Finished
-Sparse BLAS GEMV USM example ran OK.
+                 sparse::spmv example passed
+        Finished
+Sparse BLAS SPMV USM example ran OK.
 ```
 
-Compile-time dispatching example with mklcpu backend
+Compile-time dispatching example with both mklcpu and cusparse backend
 ```
-$ export SYCL_DEVICE_FILTER=cpu
-$ ./bin/example_sparse_blas_gemv_usm_mklcpu
+$ ./bin/sparse_blas_spmv_usm_mklcpu_cusparse
 
 ########################################################################
-# Sparse Matrix-Vector Multiply Example: 
-# 
+# Sparse Matrix-Vector Multiply Example:
+#
 # y = alpha * op(A) * x + beta * y
-# 
-# where A is a sparse matrix in CSR format, x and y are dense vectors
+#
+# where A is a sparse matrix in COO format, x and y are dense vectors
 # and alpha, beta are floating point type precision scalars.
-# 
+#
 # Using apis:
-#   sparse::gemv
-# 
+#   sparse::spmv
+#
 # Using single precision (float) data type
-# 
-# Running on Intel CPU device
-# 
+#
+# Running on both Intel CPU and Nvidia GPU devices
+#
 ########################################################################
 
-Running Sparse BLAS GEMV USM example on CPU device.
-Device name is: Intel(R) Core(TM) i7-6700K CPU @ 4.00GHz
+Running Sparse BLAS SPMV USM example on:
+        CPU device: Intel(R) Xeon(R) Gold 6326 CPU @ 2.90GHz
+        GPU device: NVIDIA A100-PCIE-40GB
 Running with single precision real data type:
 
-		sparse::gemv parameters:
-			transA = nontrans
-			nrows = 64
-			alpha = 1, beta = 0
+                sparse::spmv parameters:
+                        transA = nontrans
+                        size = 8
+                        alpha = 1, beta = 0
 
-		 sparse::gemv example passed
-	Finished
-Sparse BLAS GEMV USM example ran OK.
+                 sparse::spmv example passed
+        Finished
+
+                sparse::spmv parameters:
+                        transA = nontrans
+                        size = 8
+                        alpha = 1, beta = 0
+
+                 sparse::spmv example passed
+        Finished
+Sparse BLAS SPMV USM example ran OK on MKLCPU and CUSPARSE.
 ```

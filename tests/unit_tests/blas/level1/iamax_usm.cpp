@@ -29,9 +29,9 @@
 #include <CL/sycl.hpp>
 #endif
 #include "cblas.h"
-#include "oneapi/mkl/detail/config.hpp"
-#include "oneapi/mkl.hpp"
-#include "onemkl_blas_helper.hpp"
+#include "oneapi/math/detail/config.hpp"
+#include "oneapi/math.hpp"
+#include "onemath_blas_helper.hpp"
 #include "reference_blas_templates.hpp"
 #include "test_common.hpp"
 #include "test_helper.hpp"
@@ -46,7 +46,7 @@ extern std::vector<sycl::device*> devices;
 namespace {
 
 template <typename fp, usm::alloc alloc_type = usm::alloc::shared>
-int test(device* dev, oneapi::mkl::layout layout, int N, int incx) {
+int test(device* dev, oneapi::math::layout layout, int N, int incx, oneapi::math::index_base base) {
     // Catch asynchronous exceptions.
     auto exception_handler = [](exception_list exceptions) {
         for (std::exception_ptr const& e : exceptions) {
@@ -76,16 +76,16 @@ int test(device* dev, oneapi::mkl::layout layout, int N, int incx) {
     using fp_ref = typename ref_type_info<fp>::type;
     const int N_ref = N, incx_ref = incx;
 
-    result_ref = ::iamax(&N_ref, (fp_ref*)x.data(), &incx_ref);
+    result_ref = ::iamax(&N_ref, (fp_ref*)x.data(), &incx_ref, base);
 
     // Call DPC++ IAMAX.
 
     int64_t* result_p;
     if constexpr (alloc_type == usm::alloc::shared) {
-        result_p = (int64_t*)oneapi::mkl::malloc_shared(64, sizeof(int64_t), *dev, cxt);
+        result_p = (int64_t*)oneapi::math::malloc_shared(64, sizeof(int64_t), *dev, cxt);
     }
     else if constexpr (alloc_type == usm::alloc::device) {
-        result_p = (int64_t*)oneapi::mkl::malloc_device(64, sizeof(int64_t), *dev, cxt);
+        result_p = (int64_t*)oneapi::math::malloc_device(64, sizeof(int64_t), *dev, cxt);
     }
     else {
         throw std::runtime_error("Bad alloc_type");
@@ -94,26 +94,26 @@ int test(device* dev, oneapi::mkl::layout layout, int N, int incx) {
     try {
 #ifdef CALL_RT_API
         switch (layout) {
-            case oneapi::mkl::layout::col_major:
-                done = oneapi::mkl::blas::column_major::iamax(main_queue, N, x.data(), incx,
-                                                              result_p, dependencies);
+            case oneapi::math::layout::col_major:
+                done = oneapi::math::blas::column_major::iamax(main_queue, N, x.data(), incx,
+                                                               result_p, base, dependencies);
                 break;
-            case oneapi::mkl::layout::row_major:
-                done = oneapi::mkl::blas::row_major::iamax(main_queue, N, x.data(), incx, result_p,
-                                                           dependencies);
+            case oneapi::math::layout::row_major:
+                done = oneapi::math::blas::row_major::iamax(main_queue, N, x.data(), incx, result_p,
+                                                            base, dependencies);
                 break;
             default: break;
         }
         done.wait();
 #else
         switch (layout) {
-            case oneapi::mkl::layout::col_major:
-                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::mkl::blas::column_major::iamax, N,
-                                        x.data(), incx, result_p, dependencies);
+            case oneapi::math::layout::col_major:
+                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::math::blas::column_major::iamax, N,
+                                        x.data(), incx, result_p, base, dependencies);
                 break;
-            case oneapi::mkl::layout::row_major:
-                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::mkl::blas::row_major::iamax, N,
-                                        x.data(), incx, result_p, dependencies);
+            case oneapi::math::layout::row_major:
+                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::math::blas::row_major::iamax, N,
+                                        x.data(), incx, result_p, base, dependencies);
                 break;
             default: break;
         }
@@ -125,7 +125,7 @@ int test(device* dev, oneapi::mkl::layout layout, int N, int incx) {
         print_error_code(e);
     }
 
-    catch (const oneapi::mkl::unimplemented& e) {
+    catch (const oneapi::math::unimplemented& e) {
         return test_skipped;
     }
 
@@ -136,57 +136,67 @@ int test(device* dev, oneapi::mkl::layout layout, int N, int incx) {
     // Compare the results of reference implementation and DPC++ implementation.
 
     bool good = check_equal_ptr(main_queue, result_p, result_ref, 0, std::cout);
-    oneapi::mkl::free_usm(result_p, cxt);
+    oneapi::math::free_usm(result_p, cxt);
 
     return (int)good;
 }
 
 class IamaxUsmTests
-        : public ::testing::TestWithParam<std::tuple<sycl::device*, oneapi::mkl::layout>> {};
+        : public ::testing::TestWithParam<std::tuple<sycl::device*, oneapi::math::layout>> {};
 
 TEST_P(IamaxUsmTests, RealSinglePrecision) {
-    EXPECT_TRUEORSKIP(test<float>(std::get<0>(GetParam()), std::get<1>(GetParam()), 1357, 2));
-    EXPECT_TRUEORSKIP(test<float>(std::get<0>(GetParam()), std::get<1>(GetParam()), 1357, 1));
-    EXPECT_TRUEORSKIP((
-        test<float, usm::alloc::device>(std::get<0>(GetParam()), std::get<1>(GetParam()), 101, 1)));
-    EXPECT_TRUEORSKIP(test<float>(std::get<0>(GetParam()), std::get<1>(GetParam()), 1357, -3));
+    EXPECT_TRUEORSKIP(test<float>(std::get<0>(GetParam()), std::get<1>(GetParam()), 1357, 2,
+                                  oneapi::math::index_base::zero));
+    EXPECT_TRUEORSKIP(test<float>(std::get<0>(GetParam()), std::get<1>(GetParam()), 1357, 1,
+                                  oneapi::math::index_base::zero));
+    EXPECT_TRUEORSKIP((test<float, usm::alloc::device>(
+        std::get<0>(GetParam()), std::get<1>(GetParam()), 101, 1, oneapi::math::index_base::zero)));
+    EXPECT_TRUEORSKIP(test<float>(std::get<0>(GetParam()), std::get<1>(GetParam()), 1357, -3,
+                                  oneapi::math::index_base::zero));
+    EXPECT_TRUEORSKIP(test<float>(std::get<0>(GetParam()), std::get<1>(GetParam()), 1357, 1,
+                                  oneapi::math::index_base::one));
+    EXPECT_TRUEORSKIP(test<float>(std::get<0>(GetParam()), std::get<1>(GetParam()), 1357, -1,
+                                  oneapi::math::index_base::one));
 }
 TEST_P(IamaxUsmTests, RealDoublePrecision) {
     CHECK_DOUBLE_ON_DEVICE(std::get<0>(GetParam()));
 
-    EXPECT_TRUEORSKIP(test<double>(std::get<0>(GetParam()), std::get<1>(GetParam()), 1357, 2));
-    EXPECT_TRUEORSKIP(test<double>(std::get<0>(GetParam()), std::get<1>(GetParam()), 1357, 1));
-    EXPECT_TRUEORSKIP((test<double, usm::alloc::device>(std::get<0>(GetParam()),
-                                                        std::get<1>(GetParam()), 101, 1)));
-    EXPECT_TRUEORSKIP(test<double>(std::get<0>(GetParam()), std::get<1>(GetParam()), 1357, -3));
+    EXPECT_TRUEORSKIP(test<double>(std::get<0>(GetParam()), std::get<1>(GetParam()), 1357, 2,
+                                   oneapi::math::index_base::zero));
+    EXPECT_TRUEORSKIP(test<double>(std::get<0>(GetParam()), std::get<1>(GetParam()), 1357, 1,
+                                   oneapi::math::index_base::zero));
+    EXPECT_TRUEORSKIP((test<double, usm::alloc::device>(
+        std::get<0>(GetParam()), std::get<1>(GetParam()), 101, 1, oneapi::math::index_base::zero)));
+    EXPECT_TRUEORSKIP(test<double>(std::get<0>(GetParam()), std::get<1>(GetParam()), 1357, -3,
+                                   oneapi::math::index_base::zero));
 }
 TEST_P(IamaxUsmTests, ComplexSinglePrecision) {
-    EXPECT_TRUEORSKIP(
-        test<std::complex<float>>(std::get<0>(GetParam()), std::get<1>(GetParam()), 1357, 2));
-    EXPECT_TRUEORSKIP(
-        test<std::complex<float>>(std::get<0>(GetParam()), std::get<1>(GetParam()), 1357, 1));
+    EXPECT_TRUEORSKIP(test<std::complex<float>>(std::get<0>(GetParam()), std::get<1>(GetParam()),
+                                                1357, 2, oneapi::math::index_base::zero));
+    EXPECT_TRUEORSKIP(test<std::complex<float>>(std::get<0>(GetParam()), std::get<1>(GetParam()),
+                                                1357, 1, oneapi::math::index_base::zero));
     EXPECT_TRUEORSKIP((test<std::complex<float>, usm::alloc::device>(
-        std::get<0>(GetParam()), std::get<1>(GetParam()), 101, 1)));
-    EXPECT_TRUEORSKIP(
-        test<std::complex<float>>(std::get<0>(GetParam()), std::get<1>(GetParam()), 1357, -3));
+        std::get<0>(GetParam()), std::get<1>(GetParam()), 101, 1, oneapi::math::index_base::zero)));
+    EXPECT_TRUEORSKIP(test<std::complex<float>>(std::get<0>(GetParam()), std::get<1>(GetParam()),
+                                                1357, -3, oneapi::math::index_base::zero));
 }
 TEST_P(IamaxUsmTests, ComplexDoublePrecision) {
     CHECK_DOUBLE_ON_DEVICE(std::get<0>(GetParam()));
 
-    EXPECT_TRUEORSKIP(
-        test<std::complex<double>>(std::get<0>(GetParam()), std::get<1>(GetParam()), 1357, 2));
-    EXPECT_TRUEORSKIP(
-        test<std::complex<double>>(std::get<0>(GetParam()), std::get<1>(GetParam()), 1357, 1));
+    EXPECT_TRUEORSKIP(test<std::complex<double>>(std::get<0>(GetParam()), std::get<1>(GetParam()),
+                                                 1357, 2, oneapi::math::index_base::zero));
+    EXPECT_TRUEORSKIP(test<std::complex<double>>(std::get<0>(GetParam()), std::get<1>(GetParam()),
+                                                 1357, 1, oneapi::math::index_base::zero));
     EXPECT_TRUEORSKIP((test<std::complex<double>, usm::alloc::device>(
-        std::get<0>(GetParam()), std::get<1>(GetParam()), 101, 1)));
-    EXPECT_TRUEORSKIP(
-        test<std::complex<double>>(std::get<0>(GetParam()), std::get<1>(GetParam()), 1357, -3));
+        std::get<0>(GetParam()), std::get<1>(GetParam()), 101, 1, oneapi::math::index_base::zero)));
+    EXPECT_TRUEORSKIP(test<std::complex<double>>(std::get<0>(GetParam()), std::get<1>(GetParam()),
+                                                 1357, -3, oneapi::math::index_base::zero));
 }
 
 INSTANTIATE_TEST_SUITE_P(IamaxUsmTestSuite, IamaxUsmTests,
                          ::testing::Combine(testing::ValuesIn(devices),
-                                            testing::Values(oneapi::mkl::layout::col_major,
-                                                            oneapi::mkl::layout::row_major)),
+                                            testing::Values(oneapi::math::layout::col_major,
+                                                            oneapi::math::layout::row_major)),
                          ::LayoutDeviceNamePrint());
 
 } // anonymous namespace

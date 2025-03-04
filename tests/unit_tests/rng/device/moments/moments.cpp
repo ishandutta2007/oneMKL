@@ -30,19 +30,19 @@ class Philox4x32x10UniformStdDeviceMomentsTests : public ::testing::TestWithPara
 class Philox4x32x10UniformAccDeviceMomentsTests : public ::testing::TestWithParam<sycl::device*> {};
 
 TEST_P(Philox4x32x10UniformStdDeviceMomentsTests, RealSinglePrecision) {
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<1>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     float, oneapi::mkl::rng::device::uniform_method::standard>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                                 oneapi::math::rng::device::uniform<
+                                     float, oneapi::math::rng::device::uniform_method::standard>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<4>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     float, oneapi::mkl::rng::device::uniform_method::standard>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                                 oneapi::math::rng::device::uniform<
+                                     float, oneapi::math::rng::device::uniform_method::standard>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<16>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     float, oneapi::mkl::rng::device::uniform_method::standard>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                                 oneapi::math::rng::device::uniform<
+                                     float, oneapi::math::rng::device::uniform_method::standard>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
@@ -50,79 +50,125 @@ TEST_P(Philox4x32x10UniformStdDeviceMomentsTests, RealSinglePrecision) {
 TEST_P(Philox4x32x10UniformStdDeviceMomentsTests, RealDoublePrecision) {
     CHECK_DOUBLE_ON_DEVICE(GetParam());
 
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<1>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     double, oneapi::mkl::rng::device::uniform_method::standard>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                                 oneapi::math::rng::device::uniform<
+                                     double, oneapi::math::rng::device::uniform_method::standard>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<4>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     double, oneapi::mkl::rng::device::uniform_method::standard>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                                 oneapi::math::rng::device::uniform<
+                                     double, oneapi::math::rng::device::uniform_method::standard>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<16>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     double, oneapi::mkl::rng::device::uniform_method::standard>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                                 oneapi::math::rng::device::uniform<
+                                     double, oneapi::math::rng::device::uniform_method::standard>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
 
 TEST_P(Philox4x32x10UniformStdDeviceMomentsTests, IntegerPrecision) {
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::philox4x32x10<1>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::int32_t, oneapi::mkl::rng::device::uniform_method::standard>>>
+        moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                     oneapi::math::rng::device::uniform<
+                         std::int32_t, oneapi::math::rng::device::uniform_method::standard>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::philox4x32x10<4>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::int32_t, oneapi::mkl::rng::device::uniform_method::standard>>>
+        moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                     oneapi::math::rng::device::uniform<
+                         std::int32_t, oneapi::math::rng::device::uniform_method::standard>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::philox4x32x10<16>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::int32_t, oneapi::mkl::rng::device::uniform_method::standard>>>
+        moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                     oneapi::math::rng::device::uniform<
+                         std::int32_t, oneapi::math::rng::device::uniform_method::standard>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
 
 TEST_P(Philox4x32x10UniformStdDeviceMomentsTests, UnsignedIntegerPrecision) {
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::philox4x32x10<1>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::uint32_t, oneapi::mkl::rng::device::uniform_method::standard>>>
+        moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                     oneapi::math::rng::device::uniform<
+                         std::uint32_t, oneapi::math::rng::device::uniform_method::standard>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::philox4x32x10<4>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::uint32_t, oneapi::mkl::rng::device::uniform_method::standard>>>
+        moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                     oneapi::math::rng::device::uniform<
+                         std::uint32_t, oneapi::math::rng::device::uniform_method::standard>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::philox4x32x10<16>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::uint32_t, oneapi::mkl::rng::device::uniform_method::standard>>>
+        moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                     oneapi::math::rng::device::uniform<
+                         std::uint32_t, oneapi::math::rng::device::uniform_method::standard>>>
+        test3;
+    EXPECT_TRUEORSKIP((test3(GetParam())));
+}
+
+TEST_P(Philox4x32x10UniformStdDeviceMomentsTests, Integer64Precision) {
+    CHECK_DOUBLE_ON_DEVICE(GetParam());
+
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                     oneapi::math::rng::device::uniform<
+                         std::int64_t, oneapi::math::rng::device::uniform_method::standard>>>
+        test1;
+    EXPECT_TRUEORSKIP((test1(GetParam())));
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                     oneapi::math::rng::device::uniform<
+                         std::int64_t, oneapi::math::rng::device::uniform_method::standard>>>
+        test2;
+    EXPECT_TRUEORSKIP((test2(GetParam())));
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                     oneapi::math::rng::device::uniform<
+                         std::int64_t, oneapi::math::rng::device::uniform_method::standard>>>
+        test3;
+    EXPECT_TRUEORSKIP((test3(GetParam())));
+}
+
+TEST_P(Philox4x32x10UniformStdDeviceMomentsTests, UnsignedInteger64Precision) {
+    CHECK_DOUBLE_ON_DEVICE(GetParam());
+
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                     oneapi::math::rng::device::uniform<
+                         std::uint64_t, oneapi::math::rng::device::uniform_method::standard>>>
+        test1;
+    EXPECT_TRUEORSKIP((test1(GetParam())));
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                     oneapi::math::rng::device::uniform<
+                         std::uint64_t, oneapi::math::rng::device::uniform_method::standard>>>
+        test2;
+    EXPECT_TRUEORSKIP((test2(GetParam())));
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                     oneapi::math::rng::device::uniform<
+                         std::uint64_t, oneapi::math::rng::device::uniform_method::standard>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
 
 TEST_P(Philox4x32x10UniformAccDeviceMomentsTests, RealSinglePrecision) {
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<1>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     float, oneapi::mkl::rng::device::uniform_method::accurate>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                                 oneapi::math::rng::device::uniform<
+                                     float, oneapi::math::rng::device::uniform_method::accurate>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<4>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     float, oneapi::mkl::rng::device::uniform_method::accurate>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                                 oneapi::math::rng::device::uniform<
+                                     float, oneapi::math::rng::device::uniform_method::accurate>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<16>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     float, oneapi::mkl::rng::device::uniform_method::accurate>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                                 oneapi::math::rng::device::uniform<
+                                     float, oneapi::math::rng::device::uniform_method::accurate>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
@@ -130,61 +176,107 @@ TEST_P(Philox4x32x10UniformAccDeviceMomentsTests, RealSinglePrecision) {
 TEST_P(Philox4x32x10UniformAccDeviceMomentsTests, RealDoublePrecision) {
     CHECK_DOUBLE_ON_DEVICE(GetParam());
 
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<1>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     double, oneapi::mkl::rng::device::uniform_method::accurate>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                                 oneapi::math::rng::device::uniform<
+                                     double, oneapi::math::rng::device::uniform_method::accurate>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<4>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     double, oneapi::mkl::rng::device::uniform_method::accurate>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                                 oneapi::math::rng::device::uniform<
+                                     double, oneapi::math::rng::device::uniform_method::accurate>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<16>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     double, oneapi::mkl::rng::device::uniform_method::accurate>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                                 oneapi::math::rng::device::uniform<
+                                     double, oneapi::math::rng::device::uniform_method::accurate>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
 
 TEST_P(Philox4x32x10UniformAccDeviceMomentsTests, IntegerPrecision) {
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::philox4x32x10<1>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::int32_t, oneapi::mkl::rng::device::uniform_method::accurate>>>
+        moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                     oneapi::math::rng::device::uniform<
+                         std::int32_t, oneapi::math::rng::device::uniform_method::accurate>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::philox4x32x10<4>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::int32_t, oneapi::mkl::rng::device::uniform_method::accurate>>>
+        moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                     oneapi::math::rng::device::uniform<
+                         std::int32_t, oneapi::math::rng::device::uniform_method::accurate>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::philox4x32x10<16>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::int32_t, oneapi::mkl::rng::device::uniform_method::accurate>>>
+        moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                     oneapi::math::rng::device::uniform<
+                         std::int32_t, oneapi::math::rng::device::uniform_method::accurate>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
 
 TEST_P(Philox4x32x10UniformAccDeviceMomentsTests, UnsignedIntegerPrecision) {
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::philox4x32x10<1>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::uint32_t, oneapi::mkl::rng::device::uniform_method::accurate>>>
+        moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                     oneapi::math::rng::device::uniform<
+                         std::uint32_t, oneapi::math::rng::device::uniform_method::accurate>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::philox4x32x10<4>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::uint32_t, oneapi::mkl::rng::device::uniform_method::accurate>>>
+        moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                     oneapi::math::rng::device::uniform<
+                         std::uint32_t, oneapi::math::rng::device::uniform_method::accurate>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::philox4x32x10<16>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::uint32_t, oneapi::mkl::rng::device::uniform_method::accurate>>>
+        moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                     oneapi::math::rng::device::uniform<
+                         std::uint32_t, oneapi::math::rng::device::uniform_method::accurate>>>
+        test3;
+    EXPECT_TRUEORSKIP((test3(GetParam())));
+}
+
+TEST_P(Philox4x32x10UniformAccDeviceMomentsTests, Integer64Precision) {
+    CHECK_DOUBLE_ON_DEVICE(GetParam());
+
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                     oneapi::math::rng::device::uniform<
+                         std::int64_t, oneapi::math::rng::device::uniform_method::accurate>>>
+        test1;
+    EXPECT_TRUEORSKIP((test1(GetParam())));
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                     oneapi::math::rng::device::uniform<
+                         std::int64_t, oneapi::math::rng::device::uniform_method::accurate>>>
+        test2;
+    EXPECT_TRUEORSKIP((test2(GetParam())));
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                     oneapi::math::rng::device::uniform<
+                         std::int64_t, oneapi::math::rng::device::uniform_method::accurate>>>
+        test3;
+    EXPECT_TRUEORSKIP((test3(GetParam())));
+}
+
+TEST_P(Philox4x32x10UniformAccDeviceMomentsTests, UnsignedInteger64Precision) {
+    CHECK_DOUBLE_ON_DEVICE(GetParam());
+
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                     oneapi::math::rng::device::uniform<
+                         std::uint64_t, oneapi::math::rng::device::uniform_method::accurate>>>
+        test1;
+    EXPECT_TRUEORSKIP((test1(GetParam())));
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                     oneapi::math::rng::device::uniform<
+                         std::uint64_t, oneapi::math::rng::device::uniform_method::accurate>>>
+        test2;
+    EXPECT_TRUEORSKIP((test2(GetParam())));
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                     oneapi::math::rng::device::uniform<
+                         std::uint64_t, oneapi::math::rng::device::uniform_method::accurate>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
@@ -202,19 +294,19 @@ class Mrg32k3aUniformStdDeviceMomentsTests : public ::testing::TestWithParam<syc
 class Mrg32k3aUniformAccDeviceMomentsTests : public ::testing::TestWithParam<sycl::device*> {};
 
 TEST_P(Mrg32k3aUniformStdDeviceMomentsTests, RealSinglePrecision) {
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mrg32k3a<1>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     float, oneapi::mkl::rng::device::uniform_method::standard>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mrg32k3a<1>,
+                                 oneapi::math::rng::device::uniform<
+                                     float, oneapi::math::rng::device::uniform_method::standard>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mrg32k3a<4>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     float, oneapi::mkl::rng::device::uniform_method::standard>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mrg32k3a<4>,
+                                 oneapi::math::rng::device::uniform<
+                                     float, oneapi::math::rng::device::uniform_method::standard>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mrg32k3a<16>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     float, oneapi::mkl::rng::device::uniform_method::standard>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mrg32k3a<16>,
+                                 oneapi::math::rng::device::uniform<
+                                     float, oneapi::math::rng::device::uniform_method::standard>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
@@ -222,79 +314,79 @@ TEST_P(Mrg32k3aUniformStdDeviceMomentsTests, RealSinglePrecision) {
 TEST_P(Mrg32k3aUniformStdDeviceMomentsTests, RealDoublePrecision) {
     CHECK_DOUBLE_ON_DEVICE(GetParam());
 
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mrg32k3a<1>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     double, oneapi::mkl::rng::device::uniform_method::standard>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mrg32k3a<1>,
+                                 oneapi::math::rng::device::uniform<
+                                     double, oneapi::math::rng::device::uniform_method::standard>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mrg32k3a<4>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     double, oneapi::mkl::rng::device::uniform_method::standard>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mrg32k3a<4>,
+                                 oneapi::math::rng::device::uniform<
+                                     double, oneapi::math::rng::device::uniform_method::standard>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mrg32k3a<16>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     double, oneapi::mkl::rng::device::uniform_method::standard>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mrg32k3a<16>,
+                                 oneapi::math::rng::device::uniform<
+                                     double, oneapi::math::rng::device::uniform_method::standard>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
 
 TEST_P(Mrg32k3aUniformStdDeviceMomentsTests, IntegerPrecision) {
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mrg32k3a<1>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::int32_t, oneapi::mkl::rng::device::uniform_method::standard>>>
+        moments_test<oneapi::math::rng::device::mrg32k3a<1>,
+                     oneapi::math::rng::device::uniform<
+                         std::int32_t, oneapi::math::rng::device::uniform_method::standard>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mrg32k3a<4>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::int32_t, oneapi::mkl::rng::device::uniform_method::standard>>>
+        moments_test<oneapi::math::rng::device::mrg32k3a<4>,
+                     oneapi::math::rng::device::uniform<
+                         std::int32_t, oneapi::math::rng::device::uniform_method::standard>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mrg32k3a<16>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::int32_t, oneapi::mkl::rng::device::uniform_method::standard>>>
+        moments_test<oneapi::math::rng::device::mrg32k3a<16>,
+                     oneapi::math::rng::device::uniform<
+                         std::int32_t, oneapi::math::rng::device::uniform_method::standard>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
 
 TEST_P(Mrg32k3aUniformStdDeviceMomentsTests, UnsignedIntegerPrecision) {
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mrg32k3a<1>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::uint32_t, oneapi::mkl::rng::device::uniform_method::standard>>>
+        moments_test<oneapi::math::rng::device::mrg32k3a<1>,
+                     oneapi::math::rng::device::uniform<
+                         std::uint32_t, oneapi::math::rng::device::uniform_method::standard>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mrg32k3a<4>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::uint32_t, oneapi::mkl::rng::device::uniform_method::standard>>>
+        moments_test<oneapi::math::rng::device::mrg32k3a<4>,
+                     oneapi::math::rng::device::uniform<
+                         std::uint32_t, oneapi::math::rng::device::uniform_method::standard>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mrg32k3a<16>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::uint32_t, oneapi::mkl::rng::device::uniform_method::standard>>>
+        moments_test<oneapi::math::rng::device::mrg32k3a<16>,
+                     oneapi::math::rng::device::uniform<
+                         std::uint32_t, oneapi::math::rng::device::uniform_method::standard>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
 
 TEST_P(Mrg32k3aUniformAccDeviceMomentsTests, RealSinglePrecision) {
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mrg32k3a<1>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     float, oneapi::mkl::rng::device::uniform_method::accurate>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mrg32k3a<1>,
+                                 oneapi::math::rng::device::uniform<
+                                     float, oneapi::math::rng::device::uniform_method::accurate>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mrg32k3a<4>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     float, oneapi::mkl::rng::device::uniform_method::accurate>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mrg32k3a<4>,
+                                 oneapi::math::rng::device::uniform<
+                                     float, oneapi::math::rng::device::uniform_method::accurate>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mrg32k3a<16>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     float, oneapi::mkl::rng::device::uniform_method::accurate>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mrg32k3a<16>,
+                                 oneapi::math::rng::device::uniform<
+                                     float, oneapi::math::rng::device::uniform_method::accurate>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
@@ -302,61 +394,61 @@ TEST_P(Mrg32k3aUniformAccDeviceMomentsTests, RealSinglePrecision) {
 TEST_P(Mrg32k3aUniformAccDeviceMomentsTests, RealDoublePrecision) {
     CHECK_DOUBLE_ON_DEVICE(GetParam());
 
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mrg32k3a<1>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     double, oneapi::mkl::rng::device::uniform_method::accurate>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mrg32k3a<1>,
+                                 oneapi::math::rng::device::uniform<
+                                     double, oneapi::math::rng::device::uniform_method::accurate>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mrg32k3a<4>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     double, oneapi::mkl::rng::device::uniform_method::accurate>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mrg32k3a<4>,
+                                 oneapi::math::rng::device::uniform<
+                                     double, oneapi::math::rng::device::uniform_method::accurate>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mrg32k3a<16>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     double, oneapi::mkl::rng::device::uniform_method::accurate>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mrg32k3a<16>,
+                                 oneapi::math::rng::device::uniform<
+                                     double, oneapi::math::rng::device::uniform_method::accurate>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
 
 TEST_P(Mrg32k3aUniformAccDeviceMomentsTests, IntegerPrecision) {
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mrg32k3a<1>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::int32_t, oneapi::mkl::rng::device::uniform_method::accurate>>>
+        moments_test<oneapi::math::rng::device::mrg32k3a<1>,
+                     oneapi::math::rng::device::uniform<
+                         std::int32_t, oneapi::math::rng::device::uniform_method::accurate>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mrg32k3a<4>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::int32_t, oneapi::mkl::rng::device::uniform_method::accurate>>>
+        moments_test<oneapi::math::rng::device::mrg32k3a<4>,
+                     oneapi::math::rng::device::uniform<
+                         std::int32_t, oneapi::math::rng::device::uniform_method::accurate>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mrg32k3a<16>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::int32_t, oneapi::mkl::rng::device::uniform_method::accurate>>>
+        moments_test<oneapi::math::rng::device::mrg32k3a<16>,
+                     oneapi::math::rng::device::uniform<
+                         std::int32_t, oneapi::math::rng::device::uniform_method::accurate>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
 
 TEST_P(Mrg32k3aUniformAccDeviceMomentsTests, UnsignedIntegerPrecision) {
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mrg32k3a<1>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::uint32_t, oneapi::mkl::rng::device::uniform_method::accurate>>>
+        moments_test<oneapi::math::rng::device::mrg32k3a<1>,
+                     oneapi::math::rng::device::uniform<
+                         std::uint32_t, oneapi::math::rng::device::uniform_method::accurate>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mrg32k3a<4>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::uint32_t, oneapi::mkl::rng::device::uniform_method::accurate>>>
+        moments_test<oneapi::math::rng::device::mrg32k3a<4>,
+                     oneapi::math::rng::device::uniform<
+                         std::uint32_t, oneapi::math::rng::device::uniform_method::accurate>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mrg32k3a<16>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::uint32_t, oneapi::mkl::rng::device::uniform_method::accurate>>>
+        moments_test<oneapi::math::rng::device::mrg32k3a<16>,
+                     oneapi::math::rng::device::uniform<
+                         std::uint32_t, oneapi::math::rng::device::uniform_method::accurate>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
@@ -374,19 +466,19 @@ class Mcg31m1UniformStdDeviceMomentsTests : public ::testing::TestWithParam<sycl
 class Mcg31m1UniformAccDeviceMomentsTests : public ::testing::TestWithParam<sycl::device*> {};
 
 TEST_P(Mcg31m1UniformStdDeviceMomentsTests, RealSinglePrecision) {
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mcg31m1<1>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     float, oneapi::mkl::rng::device::uniform_method::standard>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mcg31m1<1>,
+                                 oneapi::math::rng::device::uniform<
+                                     float, oneapi::math::rng::device::uniform_method::standard>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mcg31m1<4>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     float, oneapi::mkl::rng::device::uniform_method::standard>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mcg31m1<4>,
+                                 oneapi::math::rng::device::uniform<
+                                     float, oneapi::math::rng::device::uniform_method::standard>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mcg31m1<16>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     float, oneapi::mkl::rng::device::uniform_method::standard>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mcg31m1<16>,
+                                 oneapi::math::rng::device::uniform<
+                                     float, oneapi::math::rng::device::uniform_method::standard>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
@@ -394,79 +486,79 @@ TEST_P(Mcg31m1UniformStdDeviceMomentsTests, RealSinglePrecision) {
 TEST_P(Mcg31m1UniformStdDeviceMomentsTests, RealDoublePrecision) {
     CHECK_DOUBLE_ON_DEVICE(GetParam());
 
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mcg31m1<1>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     double, oneapi::mkl::rng::device::uniform_method::standard>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mcg31m1<1>,
+                                 oneapi::math::rng::device::uniform<
+                                     double, oneapi::math::rng::device::uniform_method::standard>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mcg31m1<4>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     double, oneapi::mkl::rng::device::uniform_method::standard>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mcg31m1<4>,
+                                 oneapi::math::rng::device::uniform<
+                                     double, oneapi::math::rng::device::uniform_method::standard>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mcg31m1<16>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     double, oneapi::mkl::rng::device::uniform_method::standard>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mcg31m1<16>,
+                                 oneapi::math::rng::device::uniform<
+                                     double, oneapi::math::rng::device::uniform_method::standard>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
 
 TEST_P(Mcg31m1UniformStdDeviceMomentsTests, IntegerPrecision) {
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mcg31m1<1>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::int32_t, oneapi::mkl::rng::device::uniform_method::standard>>>
+        moments_test<oneapi::math::rng::device::mcg31m1<1>,
+                     oneapi::math::rng::device::uniform<
+                         std::int32_t, oneapi::math::rng::device::uniform_method::standard>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mcg31m1<4>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::int32_t, oneapi::mkl::rng::device::uniform_method::standard>>>
+        moments_test<oneapi::math::rng::device::mcg31m1<4>,
+                     oneapi::math::rng::device::uniform<
+                         std::int32_t, oneapi::math::rng::device::uniform_method::standard>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mcg31m1<16>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::int32_t, oneapi::mkl::rng::device::uniform_method::standard>>>
+        moments_test<oneapi::math::rng::device::mcg31m1<16>,
+                     oneapi::math::rng::device::uniform<
+                         std::int32_t, oneapi::math::rng::device::uniform_method::standard>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
 
 TEST_P(Mcg31m1UniformStdDeviceMomentsTests, UnsignedIntegerPrecision) {
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mcg31m1<1>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::uint32_t, oneapi::mkl::rng::device::uniform_method::standard>>>
+        moments_test<oneapi::math::rng::device::mcg31m1<1>,
+                     oneapi::math::rng::device::uniform<
+                         std::uint32_t, oneapi::math::rng::device::uniform_method::standard>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mcg31m1<4>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::uint32_t, oneapi::mkl::rng::device::uniform_method::standard>>>
+        moments_test<oneapi::math::rng::device::mcg31m1<4>,
+                     oneapi::math::rng::device::uniform<
+                         std::uint32_t, oneapi::math::rng::device::uniform_method::standard>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mcg31m1<16>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::uint32_t, oneapi::mkl::rng::device::uniform_method::standard>>>
+        moments_test<oneapi::math::rng::device::mcg31m1<16>,
+                     oneapi::math::rng::device::uniform<
+                         std::uint32_t, oneapi::math::rng::device::uniform_method::standard>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
 
 TEST_P(Mcg31m1UniformAccDeviceMomentsTests, RealSinglePrecision) {
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mcg31m1<1>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     float, oneapi::mkl::rng::device::uniform_method::accurate>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mcg31m1<1>,
+                                 oneapi::math::rng::device::uniform<
+                                     float, oneapi::math::rng::device::uniform_method::accurate>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mcg31m1<4>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     float, oneapi::mkl::rng::device::uniform_method::accurate>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mcg31m1<4>,
+                                 oneapi::math::rng::device::uniform<
+                                     float, oneapi::math::rng::device::uniform_method::accurate>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mcg31m1<16>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     float, oneapi::mkl::rng::device::uniform_method::accurate>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mcg31m1<16>,
+                                 oneapi::math::rng::device::uniform<
+                                     float, oneapi::math::rng::device::uniform_method::accurate>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
@@ -474,61 +566,61 @@ TEST_P(Mcg31m1UniformAccDeviceMomentsTests, RealSinglePrecision) {
 TEST_P(Mcg31m1UniformAccDeviceMomentsTests, RealDoublePrecision) {
     CHECK_DOUBLE_ON_DEVICE(GetParam());
 
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mcg31m1<1>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     double, oneapi::mkl::rng::device::uniform_method::accurate>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mcg31m1<1>,
+                                 oneapi::math::rng::device::uniform<
+                                     double, oneapi::math::rng::device::uniform_method::accurate>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mcg31m1<4>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     double, oneapi::mkl::rng::device::uniform_method::accurate>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mcg31m1<4>,
+                                 oneapi::math::rng::device::uniform<
+                                     double, oneapi::math::rng::device::uniform_method::accurate>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mcg31m1<16>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     double, oneapi::mkl::rng::device::uniform_method::accurate>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mcg31m1<16>,
+                                 oneapi::math::rng::device::uniform<
+                                     double, oneapi::math::rng::device::uniform_method::accurate>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
 
 TEST_P(Mcg31m1UniformAccDeviceMomentsTests, IntegerPrecision) {
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mcg31m1<1>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::int32_t, oneapi::mkl::rng::device::uniform_method::accurate>>>
+        moments_test<oneapi::math::rng::device::mcg31m1<1>,
+                     oneapi::math::rng::device::uniform<
+                         std::int32_t, oneapi::math::rng::device::uniform_method::accurate>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mcg31m1<4>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::int32_t, oneapi::mkl::rng::device::uniform_method::accurate>>>
+        moments_test<oneapi::math::rng::device::mcg31m1<4>,
+                     oneapi::math::rng::device::uniform<
+                         std::int32_t, oneapi::math::rng::device::uniform_method::accurate>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mcg31m1<16>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::int32_t, oneapi::mkl::rng::device::uniform_method::accurate>>>
+        moments_test<oneapi::math::rng::device::mcg31m1<16>,
+                     oneapi::math::rng::device::uniform<
+                         std::int32_t, oneapi::math::rng::device::uniform_method::accurate>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
 
 TEST_P(Mcg31m1UniformAccDeviceMomentsTests, UnsignedIntegerPrecision) {
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mcg31m1<1>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::uint32_t, oneapi::mkl::rng::device::uniform_method::accurate>>>
+        moments_test<oneapi::math::rng::device::mcg31m1<1>,
+                     oneapi::math::rng::device::uniform<
+                         std::uint32_t, oneapi::math::rng::device::uniform_method::accurate>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mcg31m1<4>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::uint32_t, oneapi::mkl::rng::device::uniform_method::accurate>>>
+        moments_test<oneapi::math::rng::device::mcg31m1<4>,
+                     oneapi::math::rng::device::uniform<
+                         std::uint32_t, oneapi::math::rng::device::uniform_method::accurate>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mcg31m1<16>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::uint32_t, oneapi::mkl::rng::device::uniform_method::accurate>>>
+        moments_test<oneapi::math::rng::device::mcg31m1<16>,
+                     oneapi::math::rng::device::uniform<
+                         std::uint32_t, oneapi::math::rng::device::uniform_method::accurate>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
@@ -546,19 +638,19 @@ class Mcg59UniformStdDeviceMomentsTests : public ::testing::TestWithParam<sycl::
 class Mcg59UniformAccDeviceMomentsTests : public ::testing::TestWithParam<sycl::device*> {};
 
 TEST_P(Mcg59UniformStdDeviceMomentsTests, RealSinglePrecision) {
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mcg59<1>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     float, oneapi::mkl::rng::device::uniform_method::standard>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mcg59<1>,
+                                 oneapi::math::rng::device::uniform<
+                                     float, oneapi::math::rng::device::uniform_method::standard>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mcg59<4>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     float, oneapi::mkl::rng::device::uniform_method::standard>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mcg59<4>,
+                                 oneapi::math::rng::device::uniform<
+                                     float, oneapi::math::rng::device::uniform_method::standard>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mcg59<16>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     float, oneapi::mkl::rng::device::uniform_method::standard>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mcg59<16>,
+                                 oneapi::math::rng::device::uniform<
+                                     float, oneapi::math::rng::device::uniform_method::standard>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
@@ -566,79 +658,79 @@ TEST_P(Mcg59UniformStdDeviceMomentsTests, RealSinglePrecision) {
 TEST_P(Mcg59UniformStdDeviceMomentsTests, RealDoublePrecision) {
     CHECK_DOUBLE_ON_DEVICE(GetParam());
 
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mcg59<1>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     double, oneapi::mkl::rng::device::uniform_method::standard>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mcg59<1>,
+                                 oneapi::math::rng::device::uniform<
+                                     double, oneapi::math::rng::device::uniform_method::standard>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mcg59<4>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     double, oneapi::mkl::rng::device::uniform_method::standard>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mcg59<4>,
+                                 oneapi::math::rng::device::uniform<
+                                     double, oneapi::math::rng::device::uniform_method::standard>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mcg59<16>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     double, oneapi::mkl::rng::device::uniform_method::standard>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mcg59<16>,
+                                 oneapi::math::rng::device::uniform<
+                                     double, oneapi::math::rng::device::uniform_method::standard>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
 
 TEST_P(Mcg59UniformStdDeviceMomentsTests, IntegerPrecision) {
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mcg59<1>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::int32_t, oneapi::mkl::rng::device::uniform_method::standard>>>
+        moments_test<oneapi::math::rng::device::mcg59<1>,
+                     oneapi::math::rng::device::uniform<
+                         std::int32_t, oneapi::math::rng::device::uniform_method::standard>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mcg59<4>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::int32_t, oneapi::mkl::rng::device::uniform_method::standard>>>
+        moments_test<oneapi::math::rng::device::mcg59<4>,
+                     oneapi::math::rng::device::uniform<
+                         std::int32_t, oneapi::math::rng::device::uniform_method::standard>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mcg59<16>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::int32_t, oneapi::mkl::rng::device::uniform_method::standard>>>
+        moments_test<oneapi::math::rng::device::mcg59<16>,
+                     oneapi::math::rng::device::uniform<
+                         std::int32_t, oneapi::math::rng::device::uniform_method::standard>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
 
 TEST_P(Mcg59UniformStdDeviceMomentsTests, UnsignedIntegerPrecision) {
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mcg59<1>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::uint32_t, oneapi::mkl::rng::device::uniform_method::standard>>>
+        moments_test<oneapi::math::rng::device::mcg59<1>,
+                     oneapi::math::rng::device::uniform<
+                         std::uint32_t, oneapi::math::rng::device::uniform_method::standard>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mcg59<4>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::uint32_t, oneapi::mkl::rng::device::uniform_method::standard>>>
+        moments_test<oneapi::math::rng::device::mcg59<4>,
+                     oneapi::math::rng::device::uniform<
+                         std::uint32_t, oneapi::math::rng::device::uniform_method::standard>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mcg59<16>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::uint32_t, oneapi::mkl::rng::device::uniform_method::standard>>>
+        moments_test<oneapi::math::rng::device::mcg59<16>,
+                     oneapi::math::rng::device::uniform<
+                         std::uint32_t, oneapi::math::rng::device::uniform_method::standard>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
 
 TEST_P(Mcg59UniformAccDeviceMomentsTests, RealSinglePrecision) {
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mcg59<1>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     float, oneapi::mkl::rng::device::uniform_method::accurate>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mcg59<1>,
+                                 oneapi::math::rng::device::uniform<
+                                     float, oneapi::math::rng::device::uniform_method::accurate>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mcg59<4>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     float, oneapi::mkl::rng::device::uniform_method::accurate>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mcg59<4>,
+                                 oneapi::math::rng::device::uniform<
+                                     float, oneapi::math::rng::device::uniform_method::accurate>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mcg59<16>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     float, oneapi::mkl::rng::device::uniform_method::accurate>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mcg59<16>,
+                                 oneapi::math::rng::device::uniform<
+                                     float, oneapi::math::rng::device::uniform_method::accurate>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
@@ -646,61 +738,61 @@ TEST_P(Mcg59UniformAccDeviceMomentsTests, RealSinglePrecision) {
 TEST_P(Mcg59UniformAccDeviceMomentsTests, RealDoublePrecision) {
     CHECK_DOUBLE_ON_DEVICE(GetParam());
 
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mcg59<1>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     double, oneapi::mkl::rng::device::uniform_method::accurate>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mcg59<1>,
+                                 oneapi::math::rng::device::uniform<
+                                     double, oneapi::math::rng::device::uniform_method::accurate>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mcg59<4>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     double, oneapi::mkl::rng::device::uniform_method::accurate>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mcg59<4>,
+                                 oneapi::math::rng::device::uniform<
+                                     double, oneapi::math::rng::device::uniform_method::accurate>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::mcg59<16>,
-                                 oneapi::mkl::rng::device::uniform<
-                                     double, oneapi::mkl::rng::device::uniform_method::accurate>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::mcg59<16>,
+                                 oneapi::math::rng::device::uniform<
+                                     double, oneapi::math::rng::device::uniform_method::accurate>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
 
 TEST_P(Mcg59UniformAccDeviceMomentsTests, IntegerPrecision) {
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mcg59<1>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::int32_t, oneapi::mkl::rng::device::uniform_method::accurate>>>
+        moments_test<oneapi::math::rng::device::mcg59<1>,
+                     oneapi::math::rng::device::uniform<
+                         std::int32_t, oneapi::math::rng::device::uniform_method::accurate>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mcg59<4>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::int32_t, oneapi::mkl::rng::device::uniform_method::accurate>>>
+        moments_test<oneapi::math::rng::device::mcg59<4>,
+                     oneapi::math::rng::device::uniform<
+                         std::int32_t, oneapi::math::rng::device::uniform_method::accurate>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mcg59<16>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::int32_t, oneapi::mkl::rng::device::uniform_method::accurate>>>
+        moments_test<oneapi::math::rng::device::mcg59<16>,
+                     oneapi::math::rng::device::uniform<
+                         std::int32_t, oneapi::math::rng::device::uniform_method::accurate>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
 
 TEST_P(Mcg59UniformAccDeviceMomentsTests, UnsignedIntegerPrecision) {
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mcg59<1>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::uint32_t, oneapi::mkl::rng::device::uniform_method::accurate>>>
+        moments_test<oneapi::math::rng::device::mcg59<1>,
+                     oneapi::math::rng::device::uniform<
+                         std::uint32_t, oneapi::math::rng::device::uniform_method::accurate>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mcg59<4>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::uint32_t, oneapi::mkl::rng::device::uniform_method::accurate>>>
+        moments_test<oneapi::math::rng::device::mcg59<4>,
+                     oneapi::math::rng::device::uniform<
+                         std::uint32_t, oneapi::math::rng::device::uniform_method::accurate>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::mcg59<16>,
-                     oneapi::mkl::rng::device::uniform<
-                         std::uint32_t, oneapi::mkl::rng::device::uniform_method::accurate>>>
+        moments_test<oneapi::math::rng::device::mcg59<16>,
+                     oneapi::math::rng::device::uniform<
+                         std::uint32_t, oneapi::math::rng::device::uniform_method::accurate>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
@@ -714,16 +806,16 @@ INSTANTIATE_TEST_SUITE_P(Mcg59UniformAccDeviceMomentsTestsSuite, Mcg59UniformAcc
 class Philox4x32x10BitsDeviceMomentsTests : public ::testing::TestWithParam<sycl::device*> {};
 
 TEST_P(Philox4x32x10BitsDeviceMomentsTests, UnsignedIntegerPrecision) {
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<1>,
-                                 oneapi::mkl::rng::device::bits<uint32_t>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                                 oneapi::math::rng::device::bits<uint32_t>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<4>,
-                                 oneapi::mkl::rng::device::bits<uint32_t>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                                 oneapi::math::rng::device::bits<uint32_t>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<16>,
-                                 oneapi::mkl::rng::device::bits<uint32_t>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                                 oneapi::math::rng::device::bits<uint32_t>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
@@ -736,31 +828,31 @@ class Philox4x32x10UniformBitsDeviceMomentsTests : public ::testing::TestWithPar
 };
 
 TEST_P(Philox4x32x10UniformBitsDeviceMomentsTests, UnsignedIntegerPrecision) {
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<1>,
-                                 oneapi::mkl::rng::device::uniform_bits<uint32_t>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                                 oneapi::math::rng::device::uniform_bits<uint32_t>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<4>,
-                                 oneapi::mkl::rng::device::uniform_bits<uint32_t>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                                 oneapi::math::rng::device::uniform_bits<uint32_t>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<16>,
-                                 oneapi::mkl::rng::device::uniform_bits<uint32_t>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                                 oneapi::math::rng::device::uniform_bits<uint32_t>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
 
 TEST_P(Philox4x32x10UniformBitsDeviceMomentsTests, UnsignedLongIntegerPrecision) {
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<1>,
-                                 oneapi::mkl::rng::device::uniform_bits<uint64_t>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                                 oneapi::math::rng::device::uniform_bits<uint64_t>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<4>,
-                                 oneapi::mkl::rng::device::uniform_bits<uint64_t>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                                 oneapi::math::rng::device::uniform_bits<uint64_t>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<16>,
-                                 oneapi::mkl::rng::device::uniform_bits<uint64_t>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                                 oneapi::math::rng::device::uniform_bits<uint64_t>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
@@ -777,39 +869,39 @@ TEST_P(Philox4x32x10GaussianBoxMuller2DeviceMomentsTests, RealDoublePrecision) {
     CHECK_DOUBLE_ON_DEVICE(GetParam());
 
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::philox4x32x10<1>,
-                     oneapi::mkl::rng::device::gaussian<
-                         float, oneapi::mkl::rng::device::gaussian_method::box_muller2>>>
+        moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                     oneapi::math::rng::device::gaussian<
+                         float, oneapi::math::rng::device::gaussian_method::box_muller2>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::philox4x32x10<4>,
-                     oneapi::mkl::rng::device::gaussian<
-                         float, oneapi::mkl::rng::device::gaussian_method::box_muller2>>>
+        moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                     oneapi::math::rng::device::gaussian<
+                         float, oneapi::math::rng::device::gaussian_method::box_muller2>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::philox4x32x10<16>,
-                     oneapi::mkl::rng::device::gaussian<
-                         float, oneapi::mkl::rng::device::gaussian_method::box_muller2>>>
+        moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                     oneapi::math::rng::device::gaussian<
+                         float, oneapi::math::rng::device::gaussian_method::box_muller2>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::philox4x32x10<1>,
-                     oneapi::mkl::rng::device::gaussian<
-                         double, oneapi::mkl::rng::device::gaussian_method::box_muller2>>>
+        moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                     oneapi::math::rng::device::gaussian<
+                         double, oneapi::math::rng::device::gaussian_method::box_muller2>>>
         test4;
     EXPECT_TRUEORSKIP((test4(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::philox4x32x10<4>,
-                     oneapi::mkl::rng::device::gaussian<
-                         double, oneapi::mkl::rng::device::gaussian_method::box_muller2>>>
+        moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                     oneapi::math::rng::device::gaussian<
+                         double, oneapi::math::rng::device::gaussian_method::box_muller2>>>
         test5;
     EXPECT_TRUEORSKIP((test5(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::philox4x32x10<16>,
-                     oneapi::mkl::rng::device::gaussian<
-                         double, oneapi::mkl::rng::device::gaussian_method::box_muller2>>>
+        moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                     oneapi::math::rng::device::gaussian<
+                         double, oneapi::math::rng::device::gaussian_method::box_muller2>>>
         test6;
     EXPECT_TRUEORSKIP((test6(GetParam())));
 }
@@ -823,21 +915,21 @@ class Philox4x32x10LognormalBoxMuller2DeviceMomentsTests
 
 TEST_P(Philox4x32x10LognormalBoxMuller2DeviceMomentsTests, RealSinglePrecision) {
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::philox4x32x10<1>,
-                     oneapi::mkl::rng::device::lognormal<
-                         float, oneapi::mkl::rng::device::lognormal_method::box_muller2>>>
+        moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                     oneapi::math::rng::device::lognormal<
+                         float, oneapi::math::rng::device::lognormal_method::box_muller2>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::philox4x32x10<4>,
-                     oneapi::mkl::rng::device::lognormal<
-                         float, oneapi::mkl::rng::device::lognormal_method::box_muller2>>>
+        moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                     oneapi::math::rng::device::lognormal<
+                         float, oneapi::math::rng::device::lognormal_method::box_muller2>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::philox4x32x10<16>,
-                     oneapi::mkl::rng::device::lognormal<
-                         float, oneapi::mkl::rng::device::lognormal_method::box_muller2>>>
+        moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                     oneapi::math::rng::device::lognormal<
+                         float, oneapi::math::rng::device::lognormal_method::box_muller2>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
@@ -846,21 +938,21 @@ TEST_P(Philox4x32x10LognormalBoxMuller2DeviceMomentsTests, RealDoublePrecision) 
     CHECK_DOUBLE_ON_DEVICE(GetParam());
 
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::philox4x32x10<1>,
-                     oneapi::mkl::rng::device::lognormal<
-                         double, oneapi::mkl::rng::device::lognormal_method::box_muller2>>>
+        moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                     oneapi::math::rng::device::lognormal<
+                         double, oneapi::math::rng::device::lognormal_method::box_muller2>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::philox4x32x10<4>,
-                     oneapi::mkl::rng::device::lognormal<
-                         double, oneapi::mkl::rng::device::lognormal_method::box_muller2>>>
+        moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                     oneapi::math::rng::device::lognormal<
+                         double, oneapi::math::rng::device::lognormal_method::box_muller2>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::philox4x32x10<16>,
-                     oneapi::mkl::rng::device::lognormal<
-                         double, oneapi::mkl::rng::device::lognormal_method::box_muller2>>>
+        moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                     oneapi::math::rng::device::lognormal<
+                         double, oneapi::math::rng::device::lognormal_method::box_muller2>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
@@ -879,34 +971,34 @@ class Philox4x32x10ExponentialIcdfAccDeviceMomentsTests
 TEST_P(Philox4x32x10ExponentialIcdfDeviceMomentsTests, RealDoublePrecision) {
     CHECK_DOUBLE_ON_DEVICE(GetParam());
 
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<1>,
-                                 oneapi::mkl::rng::device::exponential<
-                                     float, oneapi::mkl::rng::device::exponential_method::icdf>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                                 oneapi::math::rng::device::exponential<
+                                     float, oneapi::math::rng::device::exponential_method::icdf>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<4>,
-                                 oneapi::mkl::rng::device::exponential<
-                                     float, oneapi::mkl::rng::device::exponential_method::icdf>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                                 oneapi::math::rng::device::exponential<
+                                     float, oneapi::math::rng::device::exponential_method::icdf>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<16>,
-                                 oneapi::mkl::rng::device::exponential<
-                                     float, oneapi::mkl::rng::device::exponential_method::icdf>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                                 oneapi::math::rng::device::exponential<
+                                     float, oneapi::math::rng::device::exponential_method::icdf>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<1>,
-                                 oneapi::mkl::rng::device::exponential<
-                                     double, oneapi::mkl::rng::device::exponential_method::icdf>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                                 oneapi::math::rng::device::exponential<
+                                     double, oneapi::math::rng::device::exponential_method::icdf>>>
         test4;
     EXPECT_TRUEORSKIP((test4(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<4>,
-                                 oneapi::mkl::rng::device::exponential<
-                                     double, oneapi::mkl::rng::device::exponential_method::icdf>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                                 oneapi::math::rng::device::exponential<
+                                     double, oneapi::math::rng::device::exponential_method::icdf>>>
         test5;
     EXPECT_TRUEORSKIP((test5(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<16>,
-                                 oneapi::mkl::rng::device::exponential<
-                                     double, oneapi::mkl::rng::device::exponential_method::icdf>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                                 oneapi::math::rng::device::exponential<
+                                     double, oneapi::math::rng::device::exponential_method::icdf>>>
         test6;
     EXPECT_TRUEORSKIP((test6(GetParam())));
 }
@@ -916,39 +1008,39 @@ TEST_P(Philox4x32x10ExponentialIcdfAccDeviceMomentsTests, RealDoublePrecision) {
     CHECK_DOUBLE_ON_DEVICE(GetParam());
 
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::philox4x32x10<1>,
-                     oneapi::mkl::rng::device::exponential<
-                         float, oneapi::mkl::rng::device::exponential_method::icdf_accurate>>>
+        moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                     oneapi::math::rng::device::exponential<
+                         float, oneapi::math::rng::device::exponential_method::icdf_accurate>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::philox4x32x10<4>,
-                     oneapi::mkl::rng::device::exponential<
-                         float, oneapi::mkl::rng::device::exponential_method::icdf_accurate>>>
+        moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                     oneapi::math::rng::device::exponential<
+                         float, oneapi::math::rng::device::exponential_method::icdf_accurate>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::philox4x32x10<16>,
-                     oneapi::mkl::rng::device::exponential<
-                         float, oneapi::mkl::rng::device::exponential_method::icdf_accurate>>>
+        moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                     oneapi::math::rng::device::exponential<
+                         float, oneapi::math::rng::device::exponential_method::icdf_accurate>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::philox4x32x10<1>,
-                     oneapi::mkl::rng::device::exponential<
-                         double, oneapi::mkl::rng::device::exponential_method::icdf_accurate>>>
+        moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                     oneapi::math::rng::device::exponential<
+                         double, oneapi::math::rng::device::exponential_method::icdf_accurate>>>
         test4;
     EXPECT_TRUEORSKIP((test4(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::philox4x32x10<4>,
-                     oneapi::mkl::rng::device::exponential<
-                         double, oneapi::mkl::rng::device::exponential_method::icdf_accurate>>>
+        moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                     oneapi::math::rng::device::exponential<
+                         double, oneapi::math::rng::device::exponential_method::icdf_accurate>>>
         test5;
     EXPECT_TRUEORSKIP((test5(GetParam())));
     rng_device_test<
-        moments_test<oneapi::mkl::rng::device::philox4x32x10<16>,
-                     oneapi::mkl::rng::device::exponential<
-                         double, oneapi::mkl::rng::device::exponential_method::icdf_accurate>>>
+        moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                     oneapi::math::rng::device::exponential<
+                         double, oneapi::math::rng::device::exponential_method::icdf_accurate>>>
         test6;
     EXPECT_TRUEORSKIP((test6(GetParam())));
 }
@@ -961,41 +1053,228 @@ INSTANTIATE_TEST_SUITE_P(Philox4x32x10ExponentialIcdfAccDeviceMomentsTestsSuite,
                          Philox4x32x10ExponentialIcdfAccDeviceMomentsTests,
                          ::testing::ValuesIn(devices), ::DeviceNamePrint());
 
+class Philox4x32x10BetaCjaDeviceMomentsTests : public ::testing::TestWithParam<sycl::device*> {};
+
+class Philox4x32x10BetaCjaAccDeviceMomentsTests : public ::testing::TestWithParam<sycl::device*> {};
+
+TEST_P(Philox4x32x10BetaCjaDeviceMomentsTests, RealSinglePrecision) {
+    rng_device_test<moments_test<
+        oneapi::math::rng::device::philox4x32x10<1>,
+        oneapi::math::rng::device::beta<float, oneapi::math::rng::device::beta_method::cja>>>
+        test1;
+    EXPECT_TRUEORSKIP((test1(GetParam())));
+    rng_device_test<moments_test<
+        oneapi::math::rng::device::philox4x32x10<4>,
+        oneapi::math::rng::device::beta<float, oneapi::math::rng::device::beta_method::cja>>>
+        test2;
+    EXPECT_TRUEORSKIP((test2(GetParam())));
+    rng_device_test<moments_test<
+        oneapi::math::rng::device::philox4x32x10<16>,
+        oneapi::math::rng::device::beta<float, oneapi::math::rng::device::beta_method::cja>>>
+        test3;
+    EXPECT_TRUEORSKIP((test3(GetParam())));
+}
+
+TEST_P(Philox4x32x10BetaCjaDeviceMomentsTests, RealDoublePrecision) {
+    CHECK_DOUBLE_ON_DEVICE(GetParam());
+
+    rng_device_test<moments_test<
+        oneapi::math::rng::device::philox4x32x10<1>,
+        oneapi::math::rng::device::beta<double, oneapi::math::rng::device::beta_method::cja>>>
+        test1;
+    EXPECT_TRUEORSKIP((test1(GetParam())));
+    rng_device_test<moments_test<
+        oneapi::math::rng::device::philox4x32x10<4>,
+        oneapi::math::rng::device::beta<double, oneapi::math::rng::device::beta_method::cja>>>
+        test2;
+    EXPECT_TRUEORSKIP((test2(GetParam())));
+    rng_device_test<moments_test<
+        oneapi::math::rng::device::philox4x32x10<16>,
+        oneapi::math::rng::device::beta<double, oneapi::math::rng::device::beta_method::cja>>>
+        test3;
+    EXPECT_TRUEORSKIP((test3(GetParam())));
+}
+
+TEST_P(Philox4x32x10BetaCjaAccDeviceMomentsTests, RealSinglePrecision) {
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                                 oneapi::math::rng::device::beta<
+                                     float, oneapi::math::rng::device::beta_method::cja_accurate>>>
+        test1;
+    EXPECT_TRUEORSKIP((test1(GetParam())));
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                                 oneapi::math::rng::device::beta<
+                                     float, oneapi::math::rng::device::beta_method::cja_accurate>>>
+        test2;
+    EXPECT_TRUEORSKIP((test2(GetParam())));
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                                 oneapi::math::rng::device::beta<
+                                     float, oneapi::math::rng::device::beta_method::cja_accurate>>>
+        test3;
+    EXPECT_TRUEORSKIP((test3(GetParam())));
+}
+
+TEST_P(Philox4x32x10BetaCjaAccDeviceMomentsTests, RealDoublePrecision) {
+    CHECK_DOUBLE_ON_DEVICE(GetParam());
+
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                                 oneapi::math::rng::device::beta<
+                                     double, oneapi::math::rng::device::beta_method::cja_accurate>>>
+        test1;
+    EXPECT_TRUEORSKIP((test1(GetParam())));
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                                 oneapi::math::rng::device::beta<
+                                     double, oneapi::math::rng::device::beta_method::cja_accurate>>>
+        test2;
+    EXPECT_TRUEORSKIP((test2(GetParam())));
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                                 oneapi::math::rng::device::beta<
+                                     double, oneapi::math::rng::device::beta_method::cja_accurate>>>
+        test3;
+    EXPECT_TRUEORSKIP((test3(GetParam())));
+}
+
+INSTANTIATE_TEST_SUITE_P(Philox4x32x10BetaCjaDeviceMomentsTestsSuite,
+                         Philox4x32x10BetaCjaDeviceMomentsTests, ::testing::ValuesIn(devices),
+                         ::DeviceNamePrint());
+
+INSTANTIATE_TEST_SUITE_P(Philox4x32x10BetaCjaAccDeviceMomentsTestsSuite,
+                         Philox4x32x10BetaCjaAccDeviceMomentsTests, ::testing::ValuesIn(devices),
+                         ::DeviceNamePrint());
+
+class Philox4x32x10GammaMarsagliaDeviceMomentsTests
+        : public ::testing::TestWithParam<sycl::device*> {};
+
+class Philox4x32x10GammaMarsagliaAccDeviceMomentsTests
+        : public ::testing::TestWithParam<sycl::device*> {};
+
+TEST_P(Philox4x32x10GammaMarsagliaDeviceMomentsTests, RealSinglePrecision) {
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                                 oneapi::math::rng::device::gamma<
+                                     float, oneapi::math::rng::device::gamma_method::marsaglia>>>
+        test1;
+    EXPECT_TRUEORSKIP((test1(GetParam())));
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                                 oneapi::math::rng::device::gamma<
+                                     float, oneapi::math::rng::device::gamma_method::marsaglia>>>
+        test2;
+    EXPECT_TRUEORSKIP((test2(GetParam())));
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                                 oneapi::math::rng::device::gamma<
+                                     float, oneapi::math::rng::device::gamma_method::marsaglia>>>
+        test3;
+    EXPECT_TRUEORSKIP((test3(GetParam())));
+}
+
+TEST_P(Philox4x32x10GammaMarsagliaDeviceMomentsTests, RealDoublePrecision) {
+    CHECK_DOUBLE_ON_DEVICE(GetParam());
+
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                                 oneapi::math::rng::device::gamma<
+                                     double, oneapi::math::rng::device::gamma_method::marsaglia>>>
+        test1;
+    EXPECT_TRUEORSKIP((test1(GetParam())));
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                                 oneapi::math::rng::device::gamma<
+                                     double, oneapi::math::rng::device::gamma_method::marsaglia>>>
+        test2;
+    EXPECT_TRUEORSKIP((test2(GetParam())));
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                                 oneapi::math::rng::device::gamma<
+                                     double, oneapi::math::rng::device::gamma_method::marsaglia>>>
+        test3;
+    EXPECT_TRUEORSKIP((test3(GetParam())));
+}
+
+TEST_P(Philox4x32x10GammaMarsagliaAccDeviceMomentsTests, RealSinglePrecision) {
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                     oneapi::math::rng::device::gamma<
+                         float, oneapi::math::rng::device::gamma_method::marsaglia_accurate>>>
+        test1;
+    EXPECT_TRUEORSKIP((test1(GetParam())));
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                     oneapi::math::rng::device::gamma<
+                         float, oneapi::math::rng::device::gamma_method::marsaglia_accurate>>>
+        test2;
+    EXPECT_TRUEORSKIP((test2(GetParam())));
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                     oneapi::math::rng::device::gamma<
+                         float, oneapi::math::rng::device::gamma_method::marsaglia_accurate>>>
+        test3;
+    EXPECT_TRUEORSKIP((test3(GetParam())));
+}
+
+TEST_P(Philox4x32x10GammaMarsagliaAccDeviceMomentsTests, RealDoublePrecision) {
+    CHECK_DOUBLE_ON_DEVICE(GetParam());
+
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                     oneapi::math::rng::device::gamma<
+                         double, oneapi::math::rng::device::gamma_method::marsaglia_accurate>>>
+        test1;
+    EXPECT_TRUEORSKIP((test1(GetParam())));
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                     oneapi::math::rng::device::gamma<
+                         double, oneapi::math::rng::device::gamma_method::marsaglia_accurate>>>
+        test2;
+    EXPECT_TRUEORSKIP((test2(GetParam())));
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                     oneapi::math::rng::device::gamma<
+                         double, oneapi::math::rng::device::gamma_method::marsaglia_accurate>>>
+        test3;
+    EXPECT_TRUEORSKIP((test3(GetParam())));
+}
+
+INSTANTIATE_TEST_SUITE_P(Philox4x32x10GammaMarsagliaDeviceMomentsTestsSuite,
+                         Philox4x32x10GammaMarsagliaDeviceMomentsTests,
+                         ::testing::ValuesIn(devices), ::DeviceNamePrint());
+
+INSTANTIATE_TEST_SUITE_P(Philox4x32x10GammaMarsagliaAccDeviceMomentsTestsSuite,
+                         Philox4x32x10GammaMarsagliaAccDeviceMomentsTests,
+                         ::testing::ValuesIn(devices), ::DeviceNamePrint());
+
 class Philox4x32x10PoissonDevroyeDeviceMomentsTests
         : public ::testing::TestWithParam<sycl::device*> {};
 
 TEST_P(Philox4x32x10PoissonDevroyeDeviceMomentsTests, IntegerPrecision) {
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<1>,
-                                 oneapi::mkl::rng::device::poisson<
-                                     int32_t, oneapi::mkl::rng::device::poisson_method::devroye>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                                 oneapi::math::rng::device::poisson<
+                                     int32_t, oneapi::math::rng::device::poisson_method::devroye>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<4>,
-                                 oneapi::mkl::rng::device::poisson<
-                                     int32_t, oneapi::mkl::rng::device::poisson_method::devroye>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                                 oneapi::math::rng::device::poisson<
+                                     int32_t, oneapi::math::rng::device::poisson_method::devroye>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<16>,
-                                 oneapi::mkl::rng::device::poisson<
-                                     int32_t, oneapi::mkl::rng::device::poisson_method::devroye>>>
+    rng_device_test<moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                                 oneapi::math::rng::device::poisson<
+                                     int32_t, oneapi::math::rng::device::poisson_method::devroye>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
 
 TEST_P(Philox4x32x10PoissonDevroyeDeviceMomentsTests, UnsignedIntegerPrecision) {
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<1>,
-                                 oneapi::mkl::rng::device::poisson<
-                                     uint32_t, oneapi::mkl::rng::device::poisson_method::devroye>>>
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                     oneapi::math::rng::device::poisson<
+                         std::uint32_t, oneapi::math::rng::device::poisson_method::devroye>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<4>,
-                                 oneapi::mkl::rng::device::poisson<
-                                     uint32_t, oneapi::mkl::rng::device::poisson_method::devroye>>>
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                     oneapi::math::rng::device::poisson<
+                         std::uint32_t, oneapi::math::rng::device::poisson_method::devroye>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<16>,
-                                 oneapi::mkl::rng::device::poisson<
-                                     uint32_t, oneapi::mkl::rng::device::poisson_method::devroye>>>
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                     oneapi::math::rng::device::poisson<
+                         std::uint32_t, oneapi::math::rng::device::poisson_method::devroye>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
@@ -1008,43 +1287,228 @@ class Philox4x32x10BernoulliIcdfDeviceMomentsTests
         : public ::testing::TestWithParam<sycl::device*> {};
 
 TEST_P(Philox4x32x10BernoulliIcdfDeviceMomentsTests, IntegerPrecision) {
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<1>,
-                                 oneapi::mkl::rng::device::bernoulli<
-                                     int32_t, oneapi::mkl::rng::device::bernoulli_method::icdf>>>
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                     oneapi::math::rng::device::bernoulli<
+                         std::int32_t, oneapi::math::rng::device::bernoulli_method::icdf>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<4>,
-                                 oneapi::mkl::rng::device::bernoulli<
-                                     int32_t, oneapi::mkl::rng::device::bernoulli_method::icdf>>>
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                     oneapi::math::rng::device::bernoulli<
+                         std::int32_t, oneapi::math::rng::device::bernoulli_method::icdf>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<16>,
-                                 oneapi::mkl::rng::device::bernoulli<
-                                     int32_t, oneapi::mkl::rng::device::bernoulli_method::icdf>>>
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                     oneapi::math::rng::device::bernoulli<
+                         std::int32_t, oneapi::math::rng::device::bernoulli_method::icdf>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
 
 TEST_P(Philox4x32x10BernoulliIcdfDeviceMomentsTests, UnsignedIntegerPrecision) {
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<1>,
-                                 oneapi::mkl::rng::device::bernoulli<
-                                     uint32_t, oneapi::mkl::rng::device::bernoulli_method::icdf>>>
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                     oneapi::math::rng::device::bernoulli<
+                         std::uint32_t, oneapi::math::rng::device::bernoulli_method::icdf>>>
         test1;
     EXPECT_TRUEORSKIP((test1(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<4>,
-                                 oneapi::mkl::rng::device::bernoulli<
-                                     uint32_t, oneapi::mkl::rng::device::bernoulli_method::icdf>>>
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                     oneapi::math::rng::device::bernoulli<
+                         std::uint32_t, oneapi::math::rng::device::bernoulli_method::icdf>>>
         test2;
     EXPECT_TRUEORSKIP((test2(GetParam())));
-    rng_device_test<moments_test<oneapi::mkl::rng::device::philox4x32x10<16>,
-                                 oneapi::mkl::rng::device::bernoulli<
-                                     uint32_t, oneapi::mkl::rng::device::bernoulli_method::icdf>>>
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                     oneapi::math::rng::device::bernoulli<
+                         std::uint32_t, oneapi::math::rng::device::bernoulli_method::icdf>>>
+        test3;
+    EXPECT_TRUEORSKIP((test3(GetParam())));
+}
+
+TEST_P(Philox4x32x10BernoulliIcdfDeviceMomentsTests, Integer8Precision) {
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                     oneapi::math::rng::device::bernoulli<
+                         std::int8_t, oneapi::math::rng::device::bernoulli_method::icdf>>>
+        test1;
+    EXPECT_TRUEORSKIP((test1(GetParam())));
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                     oneapi::math::rng::device::bernoulli<
+                         std::int8_t, oneapi::math::rng::device::bernoulli_method::icdf>>>
+        test2;
+    EXPECT_TRUEORSKIP((test2(GetParam())));
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                     oneapi::math::rng::device::bernoulli<
+                         std::int8_t, oneapi::math::rng::device::bernoulli_method::icdf>>>
+        test3;
+    EXPECT_TRUEORSKIP((test3(GetParam())));
+}
+
+TEST_P(Philox4x32x10BernoulliIcdfDeviceMomentsTests, UnsignedInteger8Precision) {
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                     oneapi::math::rng::device::bernoulli<
+                         std::uint8_t, oneapi::math::rng::device::bernoulli_method::icdf>>>
+        test1;
+    EXPECT_TRUEORSKIP((test1(GetParam())));
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                     oneapi::math::rng::device::bernoulli<
+                         std::uint8_t, oneapi::math::rng::device::bernoulli_method::icdf>>>
+        test2;
+    EXPECT_TRUEORSKIP((test2(GetParam())));
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                     oneapi::math::rng::device::bernoulli<
+                         std::uint8_t, oneapi::math::rng::device::bernoulli_method::icdf>>>
+        test3;
+    EXPECT_TRUEORSKIP((test3(GetParam())));
+}
+
+TEST_P(Philox4x32x10BernoulliIcdfDeviceMomentsTests, Integer16Precision) {
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                     oneapi::math::rng::device::bernoulli<
+                         std::int16_t, oneapi::math::rng::device::bernoulli_method::icdf>>>
+        test1;
+    EXPECT_TRUEORSKIP((test1(GetParam())));
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                     oneapi::math::rng::device::bernoulli<
+                         std::int16_t, oneapi::math::rng::device::bernoulli_method::icdf>>>
+        test2;
+    EXPECT_TRUEORSKIP((test2(GetParam())));
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                     oneapi::math::rng::device::bernoulli<
+                         std::int16_t, oneapi::math::rng::device::bernoulli_method::icdf>>>
+        test3;
+    EXPECT_TRUEORSKIP((test3(GetParam())));
+}
+
+TEST_P(Philox4x32x10BernoulliIcdfDeviceMomentsTests, UnsignedInteger16Precision) {
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                     oneapi::math::rng::device::bernoulli<
+                         std::uint16_t, oneapi::math::rng::device::bernoulli_method::icdf>>>
+        test1;
+    EXPECT_TRUEORSKIP((test1(GetParam())));
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                     oneapi::math::rng::device::bernoulli<
+                         std::uint16_t, oneapi::math::rng::device::bernoulli_method::icdf>>>
+        test2;
+    EXPECT_TRUEORSKIP((test2(GetParam())));
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                     oneapi::math::rng::device::bernoulli<
+                         std::uint16_t, oneapi::math::rng::device::bernoulli_method::icdf>>>
         test3;
     EXPECT_TRUEORSKIP((test3(GetParam())));
 }
 
 INSTANTIATE_TEST_SUITE_P(Philox4x32x10BernoulliIcdfDeviceMomentsTestsSuite,
                          Philox4x32x10BernoulliIcdfDeviceMomentsTests, ::testing::ValuesIn(devices),
+                         ::DeviceNamePrint());
+
+class Philox4x32x10GeometricIcdfDeviceMomentsTests
+        : public ::testing::TestWithParam<sycl::device*> {};
+
+TEST_P(Philox4x32x10GeometricIcdfDeviceMomentsTests, IntegerPrecision) {
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                     oneapi::math::rng::device::geometric<
+                         std::int32_t, oneapi::math::rng::device::geometric_method::icdf>>>
+        test1;
+    EXPECT_TRUEORSKIP((test1(GetParam())));
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                     oneapi::math::rng::device::geometric<
+                         std::int32_t, oneapi::math::rng::device::geometric_method::icdf>>>
+        test2;
+    EXPECT_TRUEORSKIP((test2(GetParam())));
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                     oneapi::math::rng::device::geometric<
+                         std::int32_t, oneapi::math::rng::device::geometric_method::icdf>>>
+        test3;
+    EXPECT_TRUEORSKIP((test3(GetParam())));
+}
+
+TEST_P(Philox4x32x10GeometricIcdfDeviceMomentsTests, UnsignedIntegerPrecision) {
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                     oneapi::math::rng::device::geometric<
+                         std::uint32_t, oneapi::math::rng::device::geometric_method::icdf>>>
+        test1;
+    EXPECT_TRUEORSKIP((test1(GetParam())));
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                     oneapi::math::rng::device::geometric<
+                         std::uint32_t, oneapi::math::rng::device::geometric_method::icdf>>>
+        test2;
+    EXPECT_TRUEORSKIP((test2(GetParam())));
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                     oneapi::math::rng::device::geometric<
+                         std::uint32_t, oneapi::math::rng::device::geometric_method::icdf>>>
+        test3;
+    EXPECT_TRUEORSKIP((test3(GetParam())));
+}
+
+TEST_P(Philox4x32x10GeometricIcdfDeviceMomentsTests, Integer64Precision) {
+    CHECK_DOUBLE_ON_DEVICE(GetParam());
+
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                     oneapi::math::rng::device::geometric<
+                         std::int64_t, oneapi::math::rng::device::geometric_method::icdf>>>
+        test1;
+    EXPECT_TRUEORSKIP((test1(GetParam())));
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                     oneapi::math::rng::device::geometric<
+                         std::int64_t, oneapi::math::rng::device::geometric_method::icdf>>>
+        test2;
+    EXPECT_TRUEORSKIP((test2(GetParam())));
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                     oneapi::math::rng::device::geometric<
+                         std::int64_t, oneapi::math::rng::device::geometric_method::icdf>>>
+        test3;
+    EXPECT_TRUEORSKIP((test3(GetParam())));
+}
+
+TEST_P(Philox4x32x10GeometricIcdfDeviceMomentsTests, UnsignedInteger64Precision) {
+    CHECK_DOUBLE_ON_DEVICE(GetParam());
+
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<1>,
+                     oneapi::math::rng::device::geometric<
+                         std::uint64_t, oneapi::math::rng::device::geometric_method::icdf>>>
+        test1;
+    EXPECT_TRUEORSKIP((test1(GetParam())));
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<4>,
+                     oneapi::math::rng::device::geometric<
+                         std::uint64_t, oneapi::math::rng::device::geometric_method::icdf>>>
+        test2;
+    EXPECT_TRUEORSKIP((test2(GetParam())));
+    rng_device_test<
+        moments_test<oneapi::math::rng::device::philox4x32x10<16>,
+                     oneapi::math::rng::device::geometric<
+                         std::uint64_t, oneapi::math::rng::device::geometric_method::icdf>>>
+        test3;
+    EXPECT_TRUEORSKIP((test3(GetParam())));
+}
+
+INSTANTIATE_TEST_SUITE_P(Philox4x32x10GeometricIcdfDeviceMomentsTestsSuite,
+                         Philox4x32x10GeometricIcdfDeviceMomentsTests, ::testing::ValuesIn(devices),
                          ::DeviceNamePrint());
 
 } // anonymous namespace

@@ -27,26 +27,33 @@
 #else
 #include <CL/sycl.hpp>
 #endif
-#include "oneapi/mkl/types.hpp"
+#include "oneapi/math/types.hpp"
 #ifndef __HIPSYCL__
 #include "rocblas_scope_handle.hpp"
-#if __has_include(<sycl/detail/pi.hpp>)
+#else
+#include "rocblas_scope_handle_hipsycl.hpp"
+#endif
+
+// After Plugin Interface removal in DPC++ ur.hpp is the new include
+#if __has_include(<sycl/detail/ur.hpp>)
+#include <sycl/detail/ur.hpp>
+#ifndef ONEMATH_PI_INTERFACE_REMOVED
+#define ONEMATH_PI_INTERFACE_REMOVED
+#endif
+#elif __has_include(<sycl/detail/pi.hpp>)
 #include <sycl/detail/pi.hpp>
 #else
 #include <CL/sycl/detail/pi.hpp>
 #endif
-#else
-#include "rocblas_scope_handle_hipsycl.hpp"
 
-#endif
 namespace oneapi {
-namespace mkl {
+namespace math {
 namespace blas {
 namespace rocblas {
 
 #ifdef __HIPSYCL__
 template <typename H, typename F>
-static inline void host_task_internal(H &cgh, sycl::queue queue, F f) {
+static inline void host_task_internal(H& cgh, sycl::queue queue, F f) {
     cgh.hipSYCL_enqueue_custom_operation([f, queue](sycl::interop_handle ih) {
         auto sc = RocblasScopedContextHandler(queue, ih);
         f(sc);
@@ -54,20 +61,24 @@ static inline void host_task_internal(H &cgh, sycl::queue queue, F f) {
 }
 #else
 template <typename H, typename F>
-static inline void host_task_internal(H &cgh, sycl::queue queue, F f) {
+static inline void host_task_internal(H& cgh, sycl::queue queue, F f) {
+#ifdef SYCL_EXT_ONEAPI_ENQUEUE_NATIVE_COMMAND
+    cgh.ext_codeplay_enqueue_native_command([f, queue](sycl::interop_handle ih) {
+#else
     cgh.host_task([f, queue](sycl::interop_handle ih) {
+#endif
         auto sc = RocblasScopedContextHandler(queue, ih);
         f(sc);
     });
 }
 #endif
 template <typename H, typename F>
-static inline void onemkl_rocblas_host_task(H &cgh, sycl::queue queue, F f) {
+static inline void onemath_rocblas_host_task(H& cgh, sycl::queue queue, F f) {
     (void)host_task_internal(cgh, queue, f);
 }
 
 } // namespace rocblas
 } // namespace blas
-} // namespace mkl
+} // namespace math
 } // namespace oneapi
 #endif // _ROCBLAS_TASK_HPP_

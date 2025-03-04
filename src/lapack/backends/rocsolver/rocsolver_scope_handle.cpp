@@ -26,7 +26,7 @@
 #endif
 
 namespace oneapi {
-namespace mkl {
+namespace math {
 namespace lapack {
 namespace rocsolver {
 
@@ -37,11 +37,16 @@ namespace rocsolver {
  * takes place if no other element in the container has a key equivalent to
  * the one being emplaced (keys in a map container are unique).
  */
+#ifdef ONEMATH_PI_INTERFACE_REMOVED
+thread_local rocsolver_handle<ur_context_handle_t> RocsolverScopedContextHandler::handle_helper =
+    rocsolver_handle<ur_context_handle_t>{};
+#else
 thread_local rocsolver_handle<pi_context> RocsolverScopedContextHandler::handle_helper =
     rocsolver_handle<pi_context>{};
+#endif
 
 RocsolverScopedContextHandler::RocsolverScopedContextHandler(sycl::queue queue,
-                                                             sycl::interop_handle &ih)
+                                                             sycl::interop_handle& ih)
         : ih(ih),
           needToRecover_(false) {
     placedContext_ = new sycl::context(queue.get_context());
@@ -71,8 +76,8 @@ RocsolverScopedContextHandler::~RocsolverScopedContextHandler() noexcept(false) 
     delete placedContext_;
 }
 
-void ContextCallback(void *userData) {
-    auto *ptr = static_cast<std::atomic<rocblas_handle> *>(userData);
+void ContextCallback(void* userData) {
+    auto* ptr = static_cast<std::atomic<rocblas_handle>*>(userData);
     if (!ptr) {
         return;
     }
@@ -90,12 +95,16 @@ void ContextCallback(void *userData) {
     }
 }
 
-rocblas_handle RocsolverScopedContextHandler::get_handle(const sycl::queue &queue) {
+rocblas_handle RocsolverScopedContextHandler::get_handle(const sycl::queue& queue) {
     auto hipDevice = ih.get_native_device<sycl::backend::ext_oneapi_hip>();
     hipError_t hipErr;
     hipCtx_t desired;
     HIP_ERROR_FUNC(hipDevicePrimaryCtxRetain, hipErr, &desired, hipDevice);
+#ifdef ONEMATH_PI_INTERFACE_REMOVED
+    auto piPlacedContext_ = reinterpret_cast<ur_context_handle_t>(desired);
+#else
     auto piPlacedContext_ = reinterpret_cast<pi_context>(desired);
+#endif
     hipStream_t streamId = get_stream(queue);
     rocblas_status err;
     auto it = handle_helper.rocsolver_handle_mapper_.find(piPlacedContext_);
@@ -133,14 +142,14 @@ rocblas_handle RocsolverScopedContextHandler::get_handle(const sycl::queue &queu
     return handle;
 }
 
-hipStream_t RocsolverScopedContextHandler::get_stream(const sycl::queue &queue) {
+hipStream_t RocsolverScopedContextHandler::get_stream(const sycl::queue& queue) {
     return sycl::get_native<sycl::backend::ext_oneapi_hip>(queue);
 }
-sycl::context RocsolverScopedContextHandler::get_context(const sycl::queue &queue) {
+sycl::context RocsolverScopedContextHandler::get_context(const sycl::queue& queue) {
     return queue.get_context();
 }
 
 } // namespace rocsolver
 } // namespace lapack
-} // namespace mkl
+} // namespace math
 } // namespace oneapi

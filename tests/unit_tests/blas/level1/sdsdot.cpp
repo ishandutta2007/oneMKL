@@ -29,9 +29,9 @@
 #include <CL/sycl.hpp>
 #endif
 #include "cblas.h"
-#include "oneapi/mkl/detail/config.hpp"
-#include "oneapi/mkl.hpp"
-#include "onemkl_blas_helper.hpp"
+#include "oneapi/math/detail/config.hpp"
+#include "oneapi/math.hpp"
+#include "onemath_blas_helper.hpp"
 #include "reference_blas_templates.hpp"
 #include "test_common.hpp"
 #include "test_helper.hpp"
@@ -41,11 +41,11 @@
 using namespace sycl;
 using std::vector;
 
-extern std::vector<sycl::device *> devices;
+extern std::vector<sycl::device*> devices;
 
 namespace {
 
-int test(device *dev, oneapi::mkl::layout layout, int N, int incx, int incy, float alpha) {
+int test(device* dev, oneapi::math::layout layout, int N, int incx, int incy, float alpha) {
     // Prepare data.
     vector<float> x, y;
     float result = float(-1), result_ref = float(-1);
@@ -56,18 +56,18 @@ int test(device *dev, oneapi::mkl::layout layout, int N, int incx, int incy, flo
     // Call Reference SDSDOT.
     const int N_ref = N, incx_ref = incx, incy_ref = incy;
 
-    result_ref = ::sdsdot(&N_ref, (float *)&alpha, (float *)x.data(), &incx_ref, (float *)y.data(),
-                          &incy_ref);
+    result_ref =
+        ::sdsdot(&N_ref, (float*)&alpha, (float*)x.data(), &incx_ref, (float*)y.data(), &incy_ref);
 
     // Call DPC++ SDSDOT.
 
     // Catch asynchronous exceptions.
     auto exception_handler = [](exception_list exceptions) {
-        for (std::exception_ptr const &e : exceptions) {
+        for (std::exception_ptr const& e : exceptions) {
             try {
                 std::rethrow_exception(e);
             }
-            catch (exception const &e) {
+            catch (exception const& e) {
                 std::cout << "Caught asynchronous SYCL exception during SDSDOT:\n"
                           << e.what() << std::endl;
                 print_error_code(e);
@@ -84,53 +84,53 @@ int test(device *dev, oneapi::mkl::layout layout, int N, int incx, int incy, flo
     try {
 #ifdef CALL_RT_API
         switch (layout) {
-            case oneapi::mkl::layout::col_major:
-                oneapi::mkl::blas::column_major::sdsdot(main_queue, N, alpha, x_buffer, incx,
-                                                        y_buffer, incy, result_buffer);
+            case oneapi::math::layout::col_major:
+                oneapi::math::blas::column_major::sdsdot(main_queue, N, alpha, x_buffer, incx,
+                                                         y_buffer, incy, result_buffer);
                 break;
-            case oneapi::mkl::layout::row_major:
-                oneapi::mkl::blas::row_major::sdsdot(main_queue, N, alpha, x_buffer, incx, y_buffer,
-                                                     incy, result_buffer);
+            case oneapi::math::layout::row_major:
+                oneapi::math::blas::row_major::sdsdot(main_queue, N, alpha, x_buffer, incx,
+                                                      y_buffer, incy, result_buffer);
                 break;
             default: break;
         }
 #else
         switch (layout) {
-            case oneapi::mkl::layout::col_major:
-                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::mkl::blas::column_major::sdsdot, N,
+            case oneapi::math::layout::col_major:
+                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::math::blas::column_major::sdsdot, N,
                                         alpha, x_buffer, incx, y_buffer, incy, result_buffer);
                 break;
-            case oneapi::mkl::layout::row_major:
-                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::mkl::blas::row_major::sdsdot, N, alpha,
+            case oneapi::math::layout::row_major:
+                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::math::blas::row_major::sdsdot, N, alpha,
                                         x_buffer, incx, y_buffer, incy, result_buffer);
                 break;
             default: break;
         }
 #endif
     }
-    catch (exception const &e) {
+    catch (exception const& e) {
         std::cout << "Caught synchronous SYCL exception during SDSDOT:\n" << e.what() << std::endl;
         print_error_code(e);
     }
 
-    catch (const oneapi::mkl::unimplemented &e) {
+    catch (const oneapi::math::unimplemented& e) {
         return test_skipped;
     }
 
-    catch (const std::runtime_error &error) {
+    catch (const std::runtime_error& error) {
         std::cout << "Error raised during execution of SDSDOT:\n" << error.what() << std::endl;
     }
 
     // Compare the results of reference implementation and DPC++ implementation.
 
-    auto result_accessor = result_buffer.template get_host_access(read_only);
+    auto result_accessor = result_buffer.get_host_access(read_only);
     bool good = check_equal(result_accessor[0], result_ref, N, std::cout);
 
     return (int)good;
 }
 
 class SdsdotTests
-        : public ::testing::TestWithParam<std::tuple<sycl::device *, oneapi::mkl::layout>> {};
+        : public ::testing::TestWithParam<std::tuple<sycl::device*, oneapi::math::layout>> {};
 
 TEST_P(SdsdotTests, RealSinglePrecision) {
     CHECK_DOUBLE_ON_DEVICE(std::get<0>(GetParam()));
@@ -141,8 +141,8 @@ TEST_P(SdsdotTests, RealSinglePrecision) {
 
 INSTANTIATE_TEST_SUITE_P(SdsdotTestSuite, SdsdotTests,
                          ::testing::Combine(testing::ValuesIn(devices),
-                                            testing::Values(oneapi::mkl::layout::col_major,
-                                                            oneapi::mkl::layout::row_major)),
+                                            testing::Values(oneapi::math::layout::col_major,
+                                                            oneapi::math::layout::row_major)),
                          ::LayoutDeviceNamePrint());
 
 } // anonymous namespace

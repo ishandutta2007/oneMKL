@@ -29,9 +29,9 @@
 #include <CL/sycl.hpp>
 #endif
 #include "cblas.h"
-#include "oneapi/mkl/detail/config.hpp"
-#include "oneapi/mkl.hpp"
-#include "onemkl_blas_helper.hpp"
+#include "oneapi/math/detail/config.hpp"
+#include "oneapi/math.hpp"
+#include "onemath_blas_helper.hpp"
 #include "reference_blas_templates.hpp"
 #include "test_common.hpp"
 #include "test_helper.hpp"
@@ -41,19 +41,19 @@
 using namespace sycl;
 using std::vector;
 
-extern std::vector<sycl::device *> devices;
+extern std::vector<sycl::device*> devices;
 
 namespace {
 
 template <typename fp>
-int test(device *dev, oneapi::mkl::layout layout, int N, int incx, int incy) {
+int test(device* dev, oneapi::math::layout layout, int N, int incx, int incy) {
     // Catch asynchronous exceptions.
     auto exception_handler = [](exception_list exceptions) {
-        for (std::exception_ptr const &e : exceptions) {
+        for (std::exception_ptr const& e : exceptions) {
             try {
                 std::rethrow_exception(e);
             }
-            catch (exception const &e) {
+            catch (exception const& e) {
                 std::cout << "Caught asynchronous SYCL exception during DOTU:\n"
                           << e.what() << std::endl;
                 print_error_code(e);
@@ -78,65 +78,65 @@ int test(device *dev, oneapi::mkl::layout layout, int N, int incx, int incy) {
     using fp_ref = typename ref_type_info<fp>::type;
     const int N_ref = N, incx_ref = incx, incy_ref = incy;
 
-    ::dotu((fp_ref *)&result_reference, &N_ref, (fp_ref *)x.data(), &incx_ref, (fp_ref *)y.data(),
+    ::dotu((fp_ref*)&result_reference, &N_ref, (fp_ref*)x.data(), &incx_ref, (fp_ref*)y.data(),
            &incy_ref);
 
     // Call DPC++ DOTU.
 
-    auto result_p = (fp *)oneapi::mkl::malloc_shared(64, sizeof(fp), *dev, cxt);
+    auto result_p = (fp*)oneapi::math::malloc_shared(64, sizeof(fp), *dev, cxt);
 
     try {
 #ifdef CALL_RT_API
         switch (layout) {
-            case oneapi::mkl::layout::col_major:
-                done = oneapi::mkl::blas::column_major::dotu(
+            case oneapi::math::layout::col_major:
+                done = oneapi::math::blas::column_major::dotu(
                     main_queue, N, x.data(), incx, y.data(), incy, result_p, dependencies);
                 break;
-            case oneapi::mkl::layout::row_major:
-                done = oneapi::mkl::blas::row_major::dotu(main_queue, N, x.data(), incx, y.data(),
-                                                          incy, result_p, dependencies);
+            case oneapi::math::layout::row_major:
+                done = oneapi::math::blas::row_major::dotu(main_queue, N, x.data(), incx, y.data(),
+                                                           incy, result_p, dependencies);
                 break;
             default: break;
         }
         done.wait();
 #else
         switch (layout) {
-            case oneapi::mkl::layout::col_major:
-                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::mkl::blas::column_major::dotu, N,
+            case oneapi::math::layout::col_major:
+                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::math::blas::column_major::dotu, N,
                                         x.data(), incx, y.data(), incy, result_p, dependencies);
                 break;
-            case oneapi::mkl::layout::row_major:
-                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::mkl::blas::row_major::dotu, N, x.data(),
-                                        incx, y.data(), incy, result_p, dependencies);
+            case oneapi::math::layout::row_major:
+                TEST_RUN_BLAS_CT_SELECT(main_queue, oneapi::math::blas::row_major::dotu, N,
+                                        x.data(), incx, y.data(), incy, result_p, dependencies);
                 break;
             default: break;
         }
         main_queue.wait();
 #endif
     }
-    catch (exception const &e) {
+    catch (exception const& e) {
         std::cout << "Caught synchronous SYCL exception during DOTU:\n" << e.what() << std::endl;
         print_error_code(e);
     }
 
-    catch (const oneapi::mkl::unimplemented &e) {
+    catch (const oneapi::math::unimplemented& e) {
         return test_skipped;
     }
 
-    catch (const std::runtime_error &error) {
+    catch (const std::runtime_error& error) {
         std::cout << "Error raised during execution of DOTU:\n" << error.what() << std::endl;
     }
 
     // Compare the results of reference implementation and DPC++ implementation.
 
     bool good = check_equal(*result_p, result_reference, N, std::cout);
-    oneapi::mkl::free_shared(result_p, cxt);
+    oneapi::math::free_shared(result_p, cxt);
 
     return (int)good;
 }
 
 class DotuUsmTests
-        : public ::testing::TestWithParam<std::tuple<sycl::device *, oneapi::mkl::layout>> {};
+        : public ::testing::TestWithParam<std::tuple<sycl::device*, oneapi::math::layout>> {};
 
 TEST_P(DotuUsmTests, ComplexSinglePrecision) {
     EXPECT_TRUEORSKIP(
@@ -159,8 +159,8 @@ TEST_P(DotuUsmTests, ComplexDoublePrecision) {
 
 INSTANTIATE_TEST_SUITE_P(DotuUsmTestSuite, DotuUsmTests,
                          ::testing::Combine(testing::ValuesIn(devices),
-                                            testing::Values(oneapi::mkl::layout::col_major,
-                                                            oneapi::mkl::layout::row_major)),
+                                            testing::Values(oneapi::math::layout::col_major,
+                                                            oneapi::math::layout::row_major)),
                          ::LayoutDeviceNamePrint());
 
 } // anonymous namespace

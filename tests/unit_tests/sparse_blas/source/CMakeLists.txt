@@ -1,5 +1,5 @@
 #===============================================================================
-# Copyright 2023 Intel Corporation
+# Copyright 2024 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,12 +18,12 @@
 #===============================================================================
 
 set(SPBLAS_SOURCES
-  "sparse_gemm_buffer.cpp"
-  "sparse_gemm_usm.cpp"
-  "sparse_gemv_buffer.cpp"
-  "sparse_gemv_usm.cpp"
-  "sparse_trsv_buffer.cpp"
-  "sparse_trsv_usm.cpp"
+  "sparse_spmm_buffer.cpp"
+  "sparse_spmm_usm.cpp"
+  "sparse_spmv_buffer.cpp"
+  "sparse_spmv_usm.cpp"
+  "sparse_spsv_buffer.cpp"
+  "sparse_spsv_usm.cpp"
 )
 
 include(WarningsUtils)
@@ -41,9 +41,9 @@ if (BUILD_SHARED_LIBS)
     if (USE_ADD_SYCL_TO_TARGET_INTEGRATION)
         add_sycl_to_target(TARGET spblas_source_rt SOURCES ${SPBLAS_SOURCES})
     else ()
-        target_link_libraries(spblas_source_rt PUBLIC ONEMKL::SYCL::SYCL)
+        target_link_libraries(spblas_source_rt PUBLIC ONEMATH::SYCL::SYCL)
     endif ()
-    target_link_libraries(spblas_source_rt PRIVATE onemkl_warnings)
+    target_link_libraries(spblas_source_rt PRIVATE onemath_warnings)
 endif ()
 
 add_library(spblas_source_ct OBJECT ${SPBLAS_SOURCES})
@@ -58,6 +58,6 @@ target_include_directories(spblas_source_ct
 if (USE_ADD_SYCL_TO_TARGET_INTEGRATION)
     add_sycl_to_target(TARGET spblas_source_ct SOURCES ${SPBLAS_SOURCES})
 else ()
-    target_link_libraries(spblas_source_ct PUBLIC ONEMKL::SYCL::SYCL)
+    target_link_libraries(spblas_source_ct PUBLIC ONEMATH::SYCL::SYCL)
 endif ()
-target_link_libraries(spblas_source_ct PRIVATE onemkl_warnings)
+target_link_libraries(spblas_source_ct PRIVATE onemath_warnings)

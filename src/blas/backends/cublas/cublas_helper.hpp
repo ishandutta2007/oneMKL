@@ -33,16 +33,17 @@
 #include <cuda_fp16.h>
 #include <complex>
 
-#include "oneapi/mkl/types.hpp"
+#include "oneapi/math/types.hpp"
 #include "runtime_support_helper.hpp"
+#include "dtype_string.hpp"
 
 namespace oneapi {
-namespace mkl {
+namespace math {
 namespace blas {
 namespace cublas {
 
 // The static assert to make sure that all index types used in
-// src/oneMKL/backend/cublas/blas.hpp interface are int64_t
+// src/oneMath/backend/cublas/blas.hpp interface are int64_t
 template <typename... Next>
 struct is_int64 : std::false_type {};
 
@@ -74,13 +75,13 @@ struct Overflow<Index, T...> {
 
 template <typename Index, typename... Next>
 void overflow_check(Index index, Next... indices) {
-    static_assert(is_int64<Index, Next...>::value, "oneMKL index type must be 64 bit integer.");
+    static_assert(is_int64<Index, Next...>::value, "oneMath index type must be 64 bit integer.");
     Overflow<Index, Next...>::check(index, indices...);
 }
 
 class cublas_error : virtual public std::runtime_error {
 protected:
-    inline const char *cublas_error_map(cublasStatus_t error) {
+    inline const char* cublas_error_map(cublasStatus_t error) {
         switch (error) {
             case CUBLAS_STATUS_SUCCESS: return "CUBLAS_STATUS_SUCCESS";
 
@@ -132,7 +133,7 @@ public:
 
 class cuda_error : virtual public std::runtime_error {
 protected:
-    inline const char *cuda_error_map(CUresult result) {
+    inline const char* cuda_error_map(CUresult result) {
         switch (result) {
             case CUDA_SUCCESS: return "CUDA_SUCCESS";
             case CUDA_ERROR_NOT_PERMITTED: return "CUDA_ERROR_NOT_PERMITTED";
@@ -189,6 +190,12 @@ public:
     CUBLAS_ERROR_FUNC(cublasGetStream, err, handle, &currentStreamId);    \
     cuStreamSynchronize(currentStreamId);
 
+#define CUBLAS_ERROR_FUNC_T(name, func, err, handle, ...)                \
+    err = func(handle, __VA_ARGS__);                                     \
+    if (err != CUBLAS_STATUS_SUCCESS) {                                  \
+        throw cublas_error(std::string(name) + std::string(" : "), err); \
+    }
+
 #define CUBLAS_ERROR_FUNC_T_SYNC(name, func, err, handle, ...)           \
     err = func(handle, __VA_ARGS__);                                     \
     if (err != CUBLAS_STATUS_SUCCESS) {                                  \
@@ -198,37 +205,107 @@ public:
     CUBLAS_ERROR_FUNC(cublasGetStream, err, handle, &currentStreamId);   \
     cuStreamSynchronize(currentStreamId);
 
-inline cublasOperation_t get_cublas_operation(oneapi::mkl::transpose trn) {
+template <class Func, class... Types>
+inline void cublas_native_func(Func func, cublasStatus_t err, cublasHandle_t handle,
+                               Types... args) {
+#ifdef SYCL_EXT_ONEAPI_ENQUEUE_NATIVE_COMMAND
+    CUBLAS_ERROR_FUNC(func, err, handle, args...)
+#else
+    CUBLAS_ERROR_FUNC_SYNC(func, err, handle, args...)
+#endif
+};
+
+template <class Func, class... Types>
+inline void cublas_native_named_func(const char* func_name, Func func, cublasStatus_t err,
+                                     cublasHandle_t handle, Types... args) {
+#ifdef SYCL_EXT_ONEAPI_ENQUEUE_NATIVE_COMMAND
+    CUBLAS_ERROR_FUNC_T(func_name, func, err, handle, args...)
+#else
+    CUBLAS_ERROR_FUNC_T_SYNC(func_name, func, err, handle, args...)
+#endif
+};
+
+inline cublasOperation_t get_cublas_operation(oneapi::math::transpose trn) {
     switch (trn) {
-        case oneapi::mkl::transpose::nontrans: return CUBLAS_OP_N;
-        case oneapi::mkl::transpose::trans: return CUBLAS_OP_T;
-        case oneapi::mkl::transpose::conjtrans: return CUBLAS_OP_C;
+        case oneapi::math::transpose::nontrans: return CUBLAS_OP_N;
+        case oneapi::math::transpose::trans: return CUBLAS_OP_T;
+        case oneapi::math::transpose::conjtrans: return CUBLAS_OP_C;
         default: throw "Wrong transpose Operation.";
     }
 }
 
-inline cublasFillMode_t get_cublas_fill_mode(oneapi::mkl::uplo ul) {
+inline cublasFillMode_t get_cublas_fill_mode(oneapi::math::uplo ul) {
     switch (ul) {
-        case oneapi::mkl::uplo::upper: return CUBLAS_FILL_MODE_UPPER;
-        case oneapi::mkl::uplo::lower: return CUBLAS_FILL_MODE_LOWER;
+        case oneapi::math::uplo::upper: return CUBLAS_FILL_MODE_UPPER;
+        case oneapi::math::uplo::lower: return CUBLAS_FILL_MODE_LOWER;
         default: throw "Wrong fill mode.";
     }
 }
 
-inline cublasDiagType_t get_cublas_diag_type(oneapi::mkl::diag un) {
+inline cublasDiagType_t get_cublas_diag_type(oneapi::math::diag un) {
     switch (un) {
-        case oneapi::mkl::diag::unit: return CUBLAS_DIAG_UNIT;
-        case oneapi::mkl::diag::nonunit: return CUBLAS_DIAG_NON_UNIT;
+        case oneapi::math::diag::unit: return CUBLAS_DIAG_UNIT;
+        case oneapi::math::diag::nonunit: return CUBLAS_DIAG_NON_UNIT;
         default: throw "Wrong diag type.";
     }
 }
 
-inline cublasSideMode_t get_cublas_side_mode(oneapi::mkl::side lr) {
+inline cublasSideMode_t get_cublas_side_mode(oneapi::math::side lr) {
     switch (lr) {
-        case oneapi::mkl::side::left: return CUBLAS_SIDE_LEFT;
-        case oneapi::mkl::side::right: return CUBLAS_SIDE_RIGHT;
+        case oneapi::math::side::left: return CUBLAS_SIDE_LEFT;
+        case oneapi::math::side::right: return CUBLAS_SIDE_RIGHT;
         default: throw "Wrong side mode.";
     }
+}
+
+template <typename T>
+inline cudaDataType_t get_cublas_datatype() {
+    static_assert(false);
+}
+
+template <>
+inline cudaDataType_t get_cublas_datatype<__half>() {
+    return CUDA_R_16F;
+}
+
+template <>
+inline cudaDataType_t get_cublas_datatype<float>() {
+    return CUDA_R_32F;
+}
+
+template <>
+inline cudaDataType_t get_cublas_datatype<double>() {
+    return CUDA_R_64F;
+}
+
+template <>
+inline cudaDataType_t get_cublas_datatype<cuComplex>() {
+    return CUDA_C_32F;
+}
+
+template <>
+inline cudaDataType_t get_cublas_datatype<cuDoubleComplex>() {
+    return CUDA_C_64F;
+}
+
+template <>
+inline cudaDataType_t get_cublas_datatype<std::int8_t>() {
+    return CUDA_R_8I;
+}
+
+template <>
+inline cudaDataType_t get_cublas_datatype<std::uint8_t>() {
+    return CUDA_R_8U;
+}
+
+template <>
+inline cudaDataType_t get_cublas_datatype<std::int32_t>() {
+    return CUDA_R_32I;
+}
+
+template <>
+inline cudaDataType_t get_cublas_datatype<std::uint32_t>() {
+    return CUDA_R_32U;
 }
 
 /*converting std::complex<T> to cu<T>Complex*/
@@ -252,6 +329,6 @@ struct CudaEquivalentType<std::complex<double>> {
 
 } // namespace cublas
 } // namespace blas
-} // namespace mkl
+} // namespace math
 } // namespace oneapi
 #endif // _CUBLAS_HELPER_HPP_

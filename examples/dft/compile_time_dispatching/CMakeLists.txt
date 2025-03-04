@@ -17,32 +17,35 @@
 # SPDX-License-Identifier: Apache-2.0
 #===============================================================================
 
-#Build object from all sources
-set(DFTI_CT_BACKENDS "")
-
-if(ENABLE_MKLGPU_BACKEND)
-  list(APPEND DFTI_CT_BACKENDS "mklgpu")
+# The example is written for the MKLCPU and CUFFT backends
+if(NOT (ENABLE_MKLCPU_BACKEND AND ENABLE_CUFFT_BACKEND))
+  return()
 endif()
 
-if(ENABLE_MKLCPU_BACKEND)
-  list(APPEND DFTI_CT_BACKENDS "mklcpu")
-endif()
+set(EXAMPLE_TARGET example_dft_complex_fwd_usm_mklcpu_cufft)
 
+# External applications should use find_package or FetchContent to include oneMath first.
+# See https://github.com/uxlfoundation/oneMath/blob/develop/docs/using_onemath_with_cmake.rst
+
+# Create a CMake target with one source file
+add_executable(${EXAMPLE_TARGET} complex_fwd_usm_mklcpu_cufft.cpp)
+
+# Linking against onemath_dft_mklcpu and onemath_dft_cufft in CMake will add the required include directories and dependencies.
+# One can also link against `onemath_dft` to link against all the dft backends built.
+# These targets should only be used for compile-time dispatching.
+target_link_libraries(${EXAMPLE_TARGET} PUBLIC
+  onemath_dft_mklcpu
+  onemath_dft_cufft
+)
+
+# Include directories specific to the examples
+target_include_directories(${EXAMPLE_TARGET} PUBLIC
+  ${PROJECT_SOURCE_DIR}/examples/include
+)
+
+# Enable warnings
 include(WarningsUtils)
+target_link_libraries(${EXAMPLE_TARGET} PRIVATE onemath_warnings)
 
-foreach(dfti_backend ${DFTI_CT_BACKENDS})
-  set(EXAMPLE_NAME example_dft_complex_fwd_buffer_${dfti_backend})
-  add_executable(${EXAMPLE_NAME} complex_fwd_buffer_${dfti_backend}.cpp)
-  target_include_directories(${EXAMPLE_NAME}
-      PUBLIC ${PROJECT_SOURCE_DIR}/examples/include
-      PUBLIC ${PROJECT_SOURCE_DIR}/include
-      PUBLIC ${CMAKE_BINARY_DIR}/bin
-  )
-
-  add_dependencies(${EXAMPLE_NAME} onemkl_dft_${dfti_backend})
-  target_link_libraries(${EXAMPLE_NAME} PRIVATE ONEMKL::SYCL::SYCL onemkl_dft_${dfti_backend} onemkl_warnings)
-
-  # Register example as ctest
-  add_test(NAME dft/EXAMPLE/CT/complex_fwd_buffer_${dfti_backend} COMMAND ${EXAMPLE_NAME})
-endforeach(dfti_backend)
-
+# Register example as ctest
+add_test(NAME dft/EXAMPLE/CT/complex_fwd_usm_mklcpu_cufft COMMAND ${EXAMPLE_TARGET})

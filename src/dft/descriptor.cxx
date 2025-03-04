@@ -18,28 +18,38 @@
 *******************************************************************************/
 #include <cstdarg>
 
-#include "oneapi/mkl/detail/exceptions.hpp"
-#include "oneapi/mkl/dft/descriptor.hpp"
+#include "oneapi/math/detail/exceptions.hpp"
+#include "oneapi/math/dft/descriptor.hpp"
 
 #include "dft/descriptor_config_helper.hpp"
 
 namespace oneapi {
-namespace mkl {
+namespace math {
 namespace dft {
 namespace detail {
 
-// Compute the default strides. Modifies real_strides and complex_strides arguments.
+// Compute the default strides. Modifies real_strides and complex_strides arguments
+template <domain dom>
 inline void compute_default_strides(const std::vector<std::int64_t>& dimensions,
-                                    std::vector<std::int64_t>& input_strides,
-                                    std::vector<std::int64_t>& output_strides) {
-    auto rank = dimensions.size();
-    std::vector<std::int64_t> strides(rank + 1, 1);
-    for (auto i = rank - 1; i > 0; --i) {
-        strides[i] = strides[i + 1] * dimensions[i];
+                                    std::vector<std::int64_t>& fwd_strides,
+                                    std::vector<std::int64_t>& bwd_strides) {
+    const auto rank = dimensions.size();
+    fwd_strides = std::vector<std::int64_t>(rank + 1, 1);
+    fwd_strides[0] = 0;
+    bwd_strides = fwd_strides;
+    if (rank == 1) {
+        return;
     }
-    strides[0] = 0;
-    output_strides = strides;
-    input_strides = std::move(strides);
+
+    bwd_strides[rank - 1] =
+        dom == domain::COMPLEX ? dimensions[rank - 1] : (dimensions[rank - 1] / 2) + 1;
+    fwd_strides[rank - 1] =
+        dom == domain::COMPLEX ? dimensions[rank - 1] : 2 * bwd_strides[rank - 1];
+    for (auto i = rank - 1; i > 1; --i) {
+        // Can't start at rank - 2 with unsigned type and minimum value of rank being 1.
+        bwd_strides[i - 1] = bwd_strides[i] * dimensions[i - 1];
+        fwd_strides[i - 1] = fwd_strides[i] * dimensions[i - 1];
+    }
 }
 
 template <precision prec, domain dom>
@@ -48,10 +58,10 @@ void descriptor<prec, dom>::set_value(config_param param, ...) {
     va_start(vl, param);
     switch (param) {
         case config_param::FORWARD_DOMAIN:
-            throw mkl::invalid_argument("DFT", "set_value", "Read-only parameter.");
+            throw math::invalid_argument("DFT", "set_value", "Read-only parameter.");
             break;
         case config_param::DIMENSION:
-            throw mkl::invalid_argument("DFT", "set_value", "Read-only parameter.");
+            throw math::invalid_argument("DFT", "set_value", "Read-only parameter.");
             break;
         case config_param::LENGTHS: {
             if (values_.dimensions.size() == 1) {
@@ -64,15 +74,23 @@ void descriptor<prec, dom>::set_value(config_param param, ...) {
             break;
         }
         case config_param::PRECISION:
-            throw mkl::invalid_argument("DFT", "set_value", "Read-only parameter.");
+            throw math::invalid_argument("DFT", "set_value", "Read-only parameter.");
             break;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
         case config_param::INPUT_STRIDES:
             detail::set_value<config_param::INPUT_STRIDES>(values_, va_arg(vl, std::int64_t*));
             break;
-        case config_param::OUTPUT_STRIDES: {
+        case config_param::OUTPUT_STRIDES:
             detail::set_value<config_param::OUTPUT_STRIDES>(values_, va_arg(vl, std::int64_t*));
             break;
-        }
+#pragma clang diagnostic pop
+        case config_param::FWD_STRIDES:
+            detail::set_value<config_param::FWD_STRIDES>(values_, va_arg(vl, std::int64_t*));
+            break;
+        case config_param::BWD_STRIDES:
+            detail::set_value<config_param::BWD_STRIDES>(values_, va_arg(vl, std::int64_t*));
+            break;
         // VA arg promotes float args to double, so the following is always double:
         case config_param::FORWARD_SCALE:
             detail::set_value<config_param::FORWARD_SCALE>(values_,
@@ -118,15 +136,15 @@ void descriptor<prec, dom>::set_value(config_param param, ...) {
             detail::set_value<config_param::WORKSPACE_PLACEMENT>(values_, va_arg(vl, config_value));
             break;
         case config_param::WORKSPACE_EXTERNAL_BYTES:
-            throw mkl::invalid_argument("DFT", "set_value", "Read-only parameter.");
+            throw math::invalid_argument("DFT", "set_value", "Read-only parameter.");
             break;
         case config_param::PACKED_FORMAT:
             detail::set_value<config_param::PACKED_FORMAT>(values_, va_arg(vl, config_value));
             break;
         case config_param::COMMIT_STATUS:
-            throw mkl::invalid_argument("DFT", "set_value", "Read-only parameter.");
+            throw math::invalid_argument("DFT", "set_value", "Read-only parameter.");
             break;
-        default: throw mkl::invalid_argument("DFT", "set_value", "Invalid config_param argument.");
+        default: throw math::invalid_argument("DFT", "set_value", "Invalid config_param argument.");
     }
     va_end(vl);
 }
@@ -134,16 +152,17 @@ void descriptor<prec, dom>::set_value(config_param param, ...) {
 template <precision prec, domain dom>
 descriptor<prec, dom>::descriptor(std::vector<std::int64_t> dimensions) {
     if (dimensions.size() == 0) {
-        throw mkl::invalid_argument("DFT", "descriptor", "Cannot have 0 dimensional DFT.");
+        throw math::invalid_argument("DFT", "descriptor", "Cannot have 0 dimensional DFT.");
     }
     for (const auto& dim : dimensions) {
         if (dim <= 0) {
-            throw mkl::invalid_argument("DFT", "descriptor",
-                                        "Invalid dimension value (negative or 0).");
+            throw math::invalid_argument("DFT", "descriptor",
+                                         "Invalid dimension value (negative or 0).");
         }
     }
-    // Assume forward transform.
-    compute_default_strides(dimensions, values_.input_strides, values_.output_strides);
+    compute_default_strides<dom>(dimensions, values_.fwd_strides, values_.bwd_strides);
+    values_.input_strides = std::vector<std::int64_t>(dimensions.size() + 1, 0);
+    values_.output_strides = std::vector<std::int64_t>(dimensions.size() + 1, 0);
     values_.bwd_scale = real_t(1.0);
     values_.fwd_scale = real_t(1.0);
     values_.number_of_transforms = 1;
@@ -179,7 +198,7 @@ void descriptor<prec, dom>::get_value(config_param param, ...) const {
     va_list vl;
     va_start(vl, param);
     if (va_arg(vl, void*) == nullptr) {
-        throw mkl::invalid_argument("DFT", "get_value", "config_param is nullptr.");
+        throw math::invalid_argument("DFT", "get_value", "config_param is nullptr.");
     }
     va_end(vl);
     va_start(vl, param);
@@ -210,12 +229,23 @@ void descriptor<prec, dom>::get_value(config_param param, ...) const {
             *va_arg(vl, config_value*) = values_.conj_even_storage;
             break;
         case config_param::PLACEMENT: *va_arg(vl, config_value*) = values_.placement; break;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
         case config_param::INPUT_STRIDES:
             std::copy(values_.input_strides.begin(), values_.input_strides.end(),
                       va_arg(vl, std::int64_t*));
             break;
         case config_param::OUTPUT_STRIDES:
             std::copy(values_.output_strides.begin(), values_.output_strides.end(),
+                      va_arg(vl, std::int64_t*));
+            break;
+#pragma clang diagnostic pop
+        case config_param::FWD_STRIDES:
+            std::copy(values_.fwd_strides.begin(), values_.fwd_strides.end(),
+                      va_arg(vl, std::int64_t*));
+            break;
+        case config_param::BWD_STRIDES:
+            std::copy(values_.bwd_strides.begin(), values_.bwd_strides.end(),
                       va_arg(vl, std::int64_t*));
             break;
         case config_param::FWD_DISTANCE: *va_arg(vl, std::int64_t*) = values_.fwd_dist; break;
@@ -226,7 +256,7 @@ void descriptor<prec, dom>::get_value(config_param param, ...) const {
             break;
         case config_param::WORKSPACE_EXTERNAL_BYTES:
             if (!pimpl_) {
-                throw mkl::invalid_argument(
+                throw math::invalid_argument(
                     "DFT", "get_value",
                     "Cannot query WORKSPACE_EXTERNAL_BYTES on uncommitted descriptor.");
             }
@@ -241,7 +271,7 @@ void descriptor<prec, dom>::get_value(config_param param, ...) const {
             *va_arg(vl, config_value*) =
                 pimpl_ ? config_value::COMMITTED : config_value::UNCOMMITTED;
             break;
-        default: throw mkl::invalid_argument("DFT", "get_value", "Invalid config_param argument.");
+        default: throw math::invalid_argument("DFT", "get_value", "Invalid config_param argument.");
     }
     va_end(vl);
 }
@@ -252,8 +282,8 @@ void descriptor<prec, dom>::set_workspace(scalar_type* usm_workspace) {
         return pimpl_->set_workspace(usm_workspace);
     }
     else {
-        throw mkl::uninitialized("DFT", "set_workspace",
-                                 "Can only set workspace on committed descriptor.");
+        throw math::uninitialized("DFT", "set_workspace",
+                                  "Can only set workspace on committed descriptor.");
     }
 }
 
@@ -263,8 +293,8 @@ void descriptor<prec, dom>::set_workspace(sycl::buffer<scalar_type>& buffer_work
         return pimpl_->set_workspace(buffer_workspace);
     }
     else {
-        throw mkl::uninitialized("DFT", "set_workspace",
-                                 "Can only set workspace on committed descriptor.");
+        throw math::uninitialized("DFT", "set_workspace",
+                                  "Can only set workspace on committed descriptor.");
     }
 }
 
@@ -275,5 +305,5 @@ template class descriptor<precision::DOUBLE, domain::REAL>;
 
 } //namespace detail
 } //namespace dft
-} //namespace mkl
+} //namespace math
 } //namespace oneapi

@@ -3,22 +3,22 @@
 
 .. _create_backend_wrappers:
 
-Integrating a Third-Party Library to oneAPI Math Kernel Library (oneMKL) Interfaces
-====================================================================================
+Integrating a Third-Party Library to oneAPI Math Library (oneMath)
+==================================================================
 
-This step-by-step tutorial provides examples for enabling new third-party libraries in oneMKL.
+This step-by-step tutorial provides examples for enabling new third-party libraries in oneMath.
 
-oneMKL has a header-based implementation of the interface layer (``include`` directory) and a source-based implementation of the backend layer for each third-party library (``src`` directory). To enable a third-party library, you must update both parts of oneMKL and integrate the new third-party library to the oneMKL build and test systems.
+oneMath has a header-based implementation of the interface layer (``include`` directory) and a source-based implementation of the backend layer for each third-party library (``src`` directory). To enable a third-party library, you must update both parts of oneMath and integrate the new third-party library to the oneMath build and test systems.
 
 For the new backend library and header naming please use the following template:
 
 .. code-block::
 
-    onemkl_<domain>_<3rd-party library short name>[<wrapper for specific target>]
+    onemath_<domain>_<3rd-party library short name>[<wrapper for specific target>]
 
-Where ``<wrapper for specific target>`` is required only if multiple wrappers are provided from the same 3rd-party library, e.g., wrappers with Intel oneMKL C API for CPU target ``onemkl_blas_mklcpu.so`` and wrappers with Intel oneMKL DPC++ API for GPU target ``onemkl_blas_mklgpu.so``.
+Where ``<wrapper for specific target>`` is required only if multiple wrappers are provided from the same 3rd-party library, e.g., wrappers with Intel oneMKL C API for CPU target ``onemath_blas_mklcpu.so`` and wrappers with Intel oneMKL DPC++ API for GPU target ``onemath_blas_mklgpu.so``.
 
-If there is no need for multiple wrappers only ``<domain>`` and ``<3rd-party library short name>`` are required, e.g. ``onemkl_rng_curand.so``
+If there is no need for multiple wrappers only ``<domain>`` and ``<3rd-party library short name>`` are required, e.g. ``onemath_rng_curand.so``
 
 `1. Create Header Files`_
 
@@ -30,7 +30,7 @@ If there is no need for multiple wrappers only ``<domain>`` and ``<3rd-party lib
 
 `5. Update the Test System`_
 
-.. _generate_header_files:
+.. _create_header_files:
 
 1. Create Header Files
 ----------------------
@@ -38,22 +38,14 @@ If there is no need for multiple wrappers only ``<domain>`` and ``<3rd-party lib
 For each new backend library, you should create the following two header files:
 
 * Header file with a declaration of entry points to the new third-party library wrappers
-* Compiler-time dispatching interface (see `oneMKL Usage Models <../README.md#supported-usage-models>`_) for new third-party libraries
+* Compiler-time dispatching interface (see `oneMath Usage Models <../README.md#supported-usage-models>`_) for new third-party libraries
 
-**Header File Example**: command to generate the header file with a declaration of BLAS entry points in the oneapi::mkl::newlib namespace 
-
-.. code-block:: bash
-
-    python scripts/generate_backend_api.py include/oneapi/mkl/blas.hpp \                                  # Base header file
-                                           include/oneapi/mkl/blas/detail/newlib/onemkl_blas_newlib.hpp \ # Output header file
-                                           oneapi::mkl::newlib                                            # Wrappers namespace
-
-Code snippet of the generated header file ``include/oneapi/mkl/blas/detail/newlib/onemkl_blas_newlib.hpp``
+Example header file ``include/oneapi/math/blas/detail/newlib/onemath_blas_newlib.hpp``
 
 .. code-block:: cpp
 
     namespace oneapi {
-    namespace mkl {
+    namespace math {
     namespace newlib {
     
     void asum(sycl::queue &queue, std::int64_t n, sycl::buffer<float, 1> &x, std::int64_t incx,
@@ -61,23 +53,14 @@ Code snippet of the generated header file ``include/oneapi/mkl/blas/detail/newli
 
 
 
-**Compile-time Dispatching Interface Example**: command to generate the compile-time dispatching interface template instantiations for ``newlib`` and supported device ``newdevice``
+**Compile-time Dispatching Interface Example**:
 
-.. code-block:: bash
-
-    python scripts/generate_ct_instant.py   include/oneapi/mkl/blas/detail/blas_ct_templates.hpp \         # Base header file
-                                            include/oneapi/mkl/blas/detail/newlib/blas_ct.hpp \            # Output header file
-                                            include/oneapi/mkl/blas/detail/newlib/onemkl_blas_newlib.hpp \ # Header file with declaration of entry points to wrappers
-                                            newlib \                                                       # Library name
-                                            newdevice \                                                    # Backend name
-                                            oneapi::mkl::newlib                                            # Wrappers namespace
-
-Code snippet of the generated header file ``include/oneapi/mkl/blas/detail/newlib/blas_ct.hpp``
+Example of the compile-time dispatching interface template instantiations for ``newlib`` and supported device ``newdevice`` in ``include/oneapi/math/blas/detail/newlib/blas_ct.hpp``.
 
 .. code-block:: cpp
 
     namespace oneapi {
-    namespace mkl {
+    namespace math {
     namespace blas {
     
     template <>
@@ -85,7 +68,7 @@ Code snippet of the generated header file ``include/oneapi/mkl/blas/detail/newli
                                                    sycl::buffer<float, 1> &x, std::int64_t incx,
                                                    sycl::buffer<float, 1> &result) {
         asum_precondition(queue, n, x, incx, result);
-        oneapi::mkl::newlib::asum(queue, n, x, incx, result);
+        oneapi::math::newlib::asum(queue, n, x, incx, result);
         asum_postcondition(queue, n, x, incx, result);
     }
 
@@ -95,39 +78,39 @@ Code snippet of the generated header file ``include/oneapi/mkl/blas/detail/newli
 2. Integrate Header Files
 -------------------------
 
-Below you can see structure of oneMKL top-level include directory:
+Below you can see structure of oneMath top-level include directory:
 
 ::
 
     include/
         oneapi/
-            mkl/
-                mkl.hpp -> oneMKL spec APIs
-                types.hpp  -> oneMKL spec types
-                blas.hpp   -> oneMKL BLAS APIs w/ pre-check/dispatching/post-check
+            math/
+                math.hpp -> oneMath spec APIs
+                types.hpp  -> oneMath spec types
+                blas.hpp   -> oneMath BLAS APIs w/ pre-check/dispatching/post-check
                 detail/    -> implementation specific header files
-                    exceptions.hpp        -> oneMKL exception classes
-                    backends.hpp          -> list of oneMKL backends
+                    exceptions.hpp        -> oneMath exception classes
+                    backends.hpp          -> list of oneMath backends
                     backends_table.hpp    -> table of backend libraries for each domain and device
                     get_device_id.hpp     -> function to query device information from queue for Run-time dispatching
                 blas/
-                    predicates.hpp -> oneMKL BLAS pre-check post-check
+                    predicates.hpp -> oneMath BLAS pre-check post-check
                     detail/        -> BLAS domain specific implementation details
-                        blas_loader.hpp       -> oneMKL Run-time BLAS API
-                        blas_ct_templates.hpp -> oneMKL Compile-time BLAS API general templates
+                        blas_loader.hpp       -> oneMath Run-time BLAS API
+                        blas_ct_templates.hpp -> oneMath Compile-time BLAS API general templates
                         cublas/
-                            blas_ct.hpp            -> oneMKL Compile-time BLAS API template instantiations for <cublas>
-                            onemkl_blas_cublas.hpp -> backend wrappers library API
+                            blas_ct.hpp            -> oneMath Compile-time BLAS API template instantiations for <cublas>
+                            onemath_blas_cublas.hpp -> backend wrappers library API
                         mklcpu/
-                            blas_ct.hpp            -> oneMKL Compile-time BLAS API template instantiations for <mklcpu>
-                            onemkl_blas_mklcpu.hpp -> backend wrappers library API
+                            blas_ct.hpp            -> oneMath Compile-time BLAS API template instantiations for <mklcpu>
+                            onemath_blas_mklcpu.hpp -> backend wrappers library API
                         <other backends>/
                 <other domains>/
 
 
-To integrate the new third-party library to a oneMKL header-based part, following files from this structure should be updated:
+To integrate the new third-party library to a oneMath header-based part, following files from this structure should be updated:
 
-* ``include/oneapi/mkl/detail/backends.hpp``: add the new backend
+* ``include/oneapi/math/detail/backends.hpp``: add the new backend
 
   **Example**: add the ``newbackend`` backend
 
@@ -142,7 +125,7 @@ To integrate the new third-party library to a oneMKL header-based part, followin
         static backendmap backend_map = { { backend::mklcpu, "mklcpu" },
      +                                    { backend::newbackend, "newbackend" },
 
-* ``include/oneapi/mkl/detail/backends_table.hpp``: add new backend library for supported domain(s) and device(s)
+* ``include/oneapi/math/detail/backends_table.hpp``: add new backend library for supported domain(s) and device(s)
 
   **Example**: enable ``newlib`` for ``blas`` domain and ``newdevice`` device
 
@@ -157,69 +140,69 @@ To integrate the new third-party library to a oneMKL header-based part, followin
             { domain::blas,
               { { device::x86cpu,
                   {
-        #ifdef ENABLE_MKLCPU_BACKEND
+        #ifdef ONEMATH_ENABLE_MKLCPU_BACKEND
                       LIB_NAME("blas_mklcpu")
         #endif
                    } },
      +          { device::newdevice,
      +            {
-     +  #ifdef ENABLE_NEWLIB_BACKEND
+     +  #ifdef ONEMATH_ENABLE_NEWLIB_BACKEND
      +                 LIB_NAME("blas_newlib")
      +  #endif
      +             } },
 
-* ``include/oneapi/mkl/detail/get_device_id.hpp``: add new device detection mechanism for Run-time dispatching
+* ``include/oneapi/math/detail/get_device_id.hpp``: add new device detection mechanism for Run-time dispatching
 
   **Example**: enable ``newdevice`` if the queue is targeted for the Host
 
   .. code-block:: diff
     
-        inline oneapi::mkl::device get_device_id(sycl::queue &queue) {
-            oneapi::mkl::device device_id;
+        inline oneapi::math::device get_device_id(sycl::queue &queue) {
+            oneapi::math::device device_id;
      +      if (queue.is_host())
      +          device_id=device::newdevice;
 
-* ``include/oneapi/mkl/blas.hpp``: include the generated header file for the compile-time dispatching interface (see `oneMKL Usage Models <../README.md#supported-usage-models>`_)
+* ``include/oneapi/math/blas.hpp``: include the created header file for the compile-time dispatching interface (see `oneMath Usage Models <../README.md#supported-usage-models>`_)
 
-  **Example**: add ``include/oneapi/mkl/blas/detail/newlib/blas_ct.hpp`` generated at the `1. Create Header Files`_ step
+  **Example**: add ``include/oneapi/math/blas/detail/newlib/blas_ct.hpp`` created at the `1. Create Header Files`_ step
     
   .. code-block:: diff
     
-        #include "oneapi/mkl/blas/detail/mklcpu/blas_ct.hpp"
-        #include "oneapi/mkl/blas/detail/mklgpu/blas_ct.hpp"
-     +  #include "oneapi/mkl/blas/detail/newlib/blas_ct.hpp"
+        #include "oneapi/math/blas/detail/mklcpu/blas_ct.hpp"
+        #include "oneapi/math/blas/detail/mklgpu/blas_ct.hpp"
+     +  #include "oneapi/math/blas/detail/newlib/blas_ct.hpp"
 
 
-The new files generated at the `1. Create Header Files`_ step result in the following updated structure of the BLAS domain header files.
+The new files created at the `1. Create Header Files`_ step result in the following updated structure of the BLAS domain header files.
 
 .. code-block:: diff
 
     include/
         oneapi/
-            mkl/
-                blas.hpp -> oneMKL BLAS APIs w/ pre-check/dispatching/post-check
+            math/
+                blas.hpp -> oneMath BLAS APIs w/ pre-check/dispatching/post-check
                 blas/
-                    predicates.hpp -> oneMKL BLAS pre-check post-check
+                    predicates.hpp -> oneMath BLAS pre-check post-check
                     detail/        -> BLAS domain specific implementation details
-                        blas_loader.hpp       -> oneMKL Run-time BLAS API
-                        blas_ct_templates.hpp -> oneMKL Compile-time BLAS API general templates
+                        blas_loader.hpp       -> oneMath Run-time BLAS API
+                        blas_ct_templates.hpp -> oneMath Compile-time BLAS API general templates
                         cublas/
-                            blas_ct.hpp            -> oneMKL Compile-time BLAS API template instantiations for <cublas>
-                            onemkl_blas_cublas.hpp -> backend wrappers library API
+                            blas_ct.hpp            -> oneMath Compile-time BLAS API template instantiations for <cublas>
+                            onemath_blas_cublas.hpp -> backend wrappers library API
                         mklcpu/
-                            blas_ct.hpp            -> oneMKL Compile-time BLAS API template instantiations for <mklcpu>
-                            onemkl_blas_mklcpu.hpp -> backend wrappers library API
+                            blas_ct.hpp            -> oneMath Compile-time BLAS API template instantiations for <mklcpu>
+                            onemath_blas_mklcpu.hpp -> backend wrappers library API
         +              newlib/
-        +                  blas_ct.hpp            -> oneMKL Compile-time BLAS API template instantiations for <newbackend>
-        +                  onemkl_blas_newlib.hpp -> backend wrappers library API
+        +                  blas_ct.hpp            -> oneMath Compile-time BLAS API template instantiations for <newbackend>
+        +                  onemath_blas_newlib.hpp -> backend wrappers library API
                         <other backends>/
                 <other domains>/
 
-.. _generate_wrappers_and_cmake:
+.. _create_wrappers_and_cmake:
 
 3. Create Wrappers
 ------------------
-Wrappers convert Data Parallel C++ (DPC++) input data types to third-party library data types and call corresponding implementation from the third-party library. Wrappers for each third-party library are built to separate oneMKL backend libraries. The ``libonemkl.so`` dispatcher library loads the wrappers at run-time if you are using the interface for run-time dispatching, or you will link with them directly in case you are using the interface for compile-time dispatching (for more information see `oneMKL Usage Models <../README.md#supported-usage-models>`_).
+Wrappers convert Data Parallel C++ (DPC++) input data types to third-party library data types and call corresponding implementation from the third-party library. Wrappers for each third-party library are built to separate oneMath backend libraries. The ``libonemath.so`` dispatcher library loads the wrappers at run-time if you are using the interface for run-time dispatching, or you will link with them directly in case you are using the interface for compile-time dispatching (for more information see `oneMath Usage Models <../README.md#supported-usage-models>`_).
 
 All wrappers and dispatcher library implementations are in the ``src`` directory:
 
@@ -240,23 +223,12 @@ All wrappers and dispatcher library implementations are in the ``src`` directory
 
 Each backend library should contain a table of all functions from the chosen domain.
 
-``scripts/generate_wrappers.py`` can help to generate wrappers with the "Not implemented" exception for all functions based on the provided header file.
+**Example**: Create wrappers for ``newlib`` based on the header files created and integrated previously, and enable only one ``asum`` function
 
-You can modify wrappers generated with this script to enable third-party library functionality.
+Create two new files:
 
-**Example**: generate wrappers for ``newlib`` based on the header files generated and integrated previously, and enable only one ``asum`` function
-
-The command below generates two new files:
-
-* ``src/blas/backends/newlib/newlib_wrappers.cpp`` - DPC++ wrappers for all functions from ``include/oneapi/mkl/blas/detail/newlib/onemkl_blas_newlib.hpp``
+* ``src/blas/backends/newlib/newlib_wrappers.cpp`` - DPC++ wrappers for all functions from ``include/oneapi/math/blas/detail/newlib/onemath_blas_newlib.hpp``
 * ``src/blas/backends/newlib/newlib_wrappers_table_dyn.cpp`` - structure of symbols for run-time dispatcher (in the same location as wrappers), suffix ``_dyn`` indicates that this file is required for dynamic library only.
-
-.. code-block:: bash
-
-    python scripts/generate_wrappers.py include/oneapi/mkl/blas/detail/newlib/onemkl_blas_newlib.hpp \ # Base header file
-                                        src/blas/function_table.hpp \                                  # Declaration for structure of symbols
-                                        src/blas/backends/newlib/newlib_wrappers.cpp \                 # Output wrappers
-                                        newlib                                                         # Library name
 
 You can then modify ``src/blas/backends/newlib/newlib_wrappers.cpp`` to enable the C function ``newlib_sasum`` from the third-party library ``libnewlib.so``.
 
@@ -276,14 +248,14 @@ The following code snippet is updated for ``src/blas/backends/newlib/newlib_wrap
         #include <CL/sycl.hpp>
         #endif
         
-        #include "oneapi/mkl/types.hpp"
+        #include "oneapi/math/types.hpp"
         
-        #include "oneapi/mkl/blas/detail/newlib/onemkl_blas_newlib.hpp"
+        #include "oneapi/math/blas/detail/newlib/onemath_blas_newlib.hpp"
     +    
     +    #include "newlib.h"
         
         namespace oneapi {
-        namespace mkl {
+        namespace math {
         namespace newlib {
         
         void asum(sycl::queue &queue, std::int64_t n, sycl::buffer<float, 1> &x, std::int64_t incx,
@@ -327,7 +299,7 @@ Updated structure of the ``src`` folder with the ``newlib`` wrappers:
 
 4. Integrate Wrappers to the Build System
 -----------------------------------------
-Here is the list of files that should be created/updated to integrate the new wrappers for the third-party library to the oneMKL build system:
+Here is the list of files that should be created/updated to integrate the new wrappers for the third-party library to the oneMath build system:
 
 * Add the new option ``ENABLE_XXX_BACKEND`` for the new third-party library to the top of the ``CMakeList.txt`` file.
 
@@ -368,25 +340,17 @@ Here is the list of files that should be created/updated to integrate the new wr
         include(FindPackageHandleStandardArgs)
         find_package_handle_standard_args(NEWLIB REQUIRED_VARS NEWLIB_LIBRARY)
         # Set cmake target for the library
-        add_library(ONEMKL::NEWLIB::NEWLIB UNKNOWN IMPORTED)
-        set_target_properties(ONEMKL::NEWLIB::NEWLIB PROPERTIES
+        add_library(ONEMATH::NEWLIB::NEWLIB UNKNOWN IMPORTED)
+        set_target_properties(ONEMATH::NEWLIB::NEWLIB PROPERTIES
             IMPORTED_LOCATION ${NEWLIB_LIBRARY})
 
 * Create the ``src/<domain>/backends/<new_directory>/CMakeList.txt`` cmake config file to specify how to build the backend layer for the new third-party library.
 
-  ``scripts/generate_cmake.py`` can help to generate the initial ``src/<domain>/backends/<new_directory>/CMakeList.txt`` config file automatically for all files in the directory.
-  Note: all source files with the ``_dyn`` suffix are added to build if the target is a dynamic library only.
-  
-  **Example**: command to generate the cmake config file for the ``src/blas/backends/newlib`` directory
+  Check existing backends as a reference to create ``cmake/FindXXX.cmake`` file.
 
-  .. code-block:: bash
+  You should update the config file with information about the new ``cmake/FindXXX.cmake`` file and instructions about how to link with the third-party library.
 
-    python scripts/generate_cmake.py src/blas/backends/newlib \ # Full path to the directory
-                                     newlib                     # Library name
-
-  You should manually update the generated config file with information about the new ``cmake/FindXXX.cmake`` file and instructions about how to link with the third-party library.
-  
-  **Example**: update the generated ``src/blas/backends/newlib/CMakeLists.txt`` file
+  **Example**: update the ``src/blas/backends/newlib/CMakeLists.txt`` file
 
   .. code-block:: diff
 
@@ -397,9 +361,9 @@ Here is the list of files that should be created/updated to integrate the new wr
   .. code-block:: diff
 
             target_link_libraries(${LIB_OBJ}
-                PUBLIC ONEMKL::SYCL::SYCL
+                PUBLIC ONEMATH::SYCL::SYCL
         -       # Add third-party library to link with here
-        +       PUBLIC ONEMKL::NEWLIB::NEWLIB
+        +       PUBLIC ONEMATH::NEWLIB::NEWLIB
             )
 
 Now you can build the backend library for ``newlib`` to make sure the third-party library integration was completed successfully (for more information, see `Build with cmake <../README.md#building-with-cmake>`_)
@@ -427,8 +391,8 @@ Update the following files to enable the new third-party library for unit tests:
 
   .. code-block:: diff
     
-        #cmakedefine ENABLE_MKLCPU_BACKEND
-     +  #cmakedefine ENABLE_NEWLIB_BACKEND
+        #cmakedefine ONEMATH_ENABLE_MKLCPU_BACKEND
+     +  #cmakedefine ONEMATH_ENABLE_NEWLIB_BACKEND
 
 * ``tests/unit_tests/CMakeLists.txt``: add instructions about how to link tests with the new backend library
 
@@ -437,24 +401,24 @@ Update the following files to enable the new third-party library for unit tests:
   .. code-block:: diff
     
         if(ENABLE_MKLCPU_BACKEND)
-            add_dependencies(test_main_ct onemkl_blas_mklcpu)
+            add_dependencies(test_main_ct onemath_blas_mklcpu)
             if(BUILD_SHARED_LIBS)
-                list(APPEND ONEMKL_LIBRARIES onemkl_blas_mklcpu)
+                list(APPEND ONEMATH_LIBRARIES onemath_blas_mklcpu)
             else()
-                list(APPEND ONEMKL_LIBRARIES -foffload-static-lib=${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libonemkl_blas_mklcpu.a)
+                list(APPEND ONEMATH_LIBRARIES -foffload-static-lib=${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libonemath_blas_mklcpu.a)
                 find_package(MKL REQUIRED)
-                list(APPEND ONEMKL_LIBRARIES ${MKL_LINK_C})
+                list(APPEND ONEMATH_LIBRARIES ${MKL_LINK_C})
             endif()
         endif()
      +
      +    if(ENABLE_NEWLIB_BACKEND)
-     +       add_dependencies(test_main_ct onemkl_blas_newlib)
+     +       add_dependencies(test_main_ct onemath_blas_newlib)
      +       if(BUILD_SHARED_LIBS)
-     +           list(APPEND ONEMKL_LIBRARIES onemkl_blas_newlib)
+     +           list(APPEND ONEMATH_LIBRARIES onemath_blas_newlib)
      +       else()
-     +           list(APPEND ONEMKL_LIBRARIES -foffload-static-lib=${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libonemkl_blas_newlib.a)
+     +           list(APPEND ONEMATH_LIBRARIES -foffload-static-lib=${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libonemath_blas_newlib.a)
      +           find_package(NEWLIB REQUIRED)
-     +           list(APPEND ONEMKL_LIBRARIES ONEMKL::NEWLIB::NEWLIB)
+     +           list(APPEND ONEMATH_LIBRARIES ONEMATH::NEWLIB::NEWLIB)
      +       endif()
      +   endif()
 
@@ -464,16 +428,16 @@ Update the following files to enable the new third-party library for unit tests:
 
   .. code-block:: diff
     
-        #ifdef ENABLE_MKLGPU_BACKEND
+        #ifdef ONEMATH_ENABLE_MKLGPU_BACKEND
             #define TEST_RUN_INTELGPU(q, func, args) \
-                func<oneapi::mkl::backend::mklgpu> args
+                func<oneapi::math::backend::mklgpu> args
         #else
             #define TEST_RUN_INTELGPU(q, func, args)
         #endif
      +    
-     +  #ifdef ENABLE_NEWLIB_BACKEND
+     +  #ifdef ONEMATH_ENABLE_NEWLIB_BACKEND
      +     #define TEST_RUN_NEWDEVICE(q, func, args) \
-     +         func<oneapi::mkl::backend::newbackend> args
+     +         func<oneapi::math::backend::newbackend> args
      +  #else
      +      #define TEST_RUN_NEWDEVICE(q, func, args)
      +  #endif
@@ -495,7 +459,7 @@ Update the following files to enable the new third-party library for unit tests:
                 }
             }
      +           
-     +  #ifdef ENABLE_NEWLIB_BACKEND
+     +  #ifdef ONEMATH_ENABLE_NEWLIB_BACKEND
      +      devices.push_back(sycl::device(sycl::host_selector()));
      +  #endif
 
