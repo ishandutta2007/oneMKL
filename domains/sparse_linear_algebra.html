@@ -1,0 +1,598 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Sparse Linear Algebra &#8212; oneMath 0.1 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.1/css/all.min.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.1/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.1/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.1/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=384b581d" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8d27b9dea8ad943066ae" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8d27b9dea8ad943066ae" />
+  <script src="../_static/vendor/fontawesome/6.5.1/js/all.min.js?digest=8d27b9dea8ad943066ae"></script>
+
+    <script src="../_static/documentation_options.js?v=e1a75a79"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=efea14e4"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'domains/sparse_linear_algebra';</script>
+    <link rel="icon" href="../_static/favicons.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Integrating a Third-Party Library to oneAPI Math Library (oneMath)" href="../create_new_backend.html" />
+    <link rel="prev" title="Using oneMath in your project with CMake" href="../using_onemath_with_cmake.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a id="pst-skip-link" class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/oneAPI-rgb-rev-100.png" class="logo__image only-light" alt="oneMath 0.1 documentation - Home"/>
+    <script>document.write(`<img src="../_static/oneAPI-rgb-rev-100.png" class="logo__image only-dark" alt="oneMath 0.1 documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Get Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../selecting_a_compiler.html">Selecting a Compiler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../building_the_project_with_dpcpp.html">Building the Project with DPC++</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../building_the_project_with_adaptivecpp.html">Building the Project with AdaptiveCpp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../building_and_running_tests.html">Building and Running Tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using_onemath_with_cmake.html">Using oneMath in your project with CMake</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Developer Reference</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Sparse Linear Algebra</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../create_new_backend.html">Integrating a Third-Party Library to oneAPI Math Library (oneMath)</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><label class="sidebar-toggle primary-toggle btn btn-sm" for="__primary" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</label></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/uxlfoundation/oneMath/edit/develop/docs/domains/sparse_linear_algebra.rst" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/uxlfoundation/oneMath/issues/new?title=Issue%20on%20page%20%2Fdomains/sparse_linear_algebra.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/domains/sparse_linear_algebra.rst" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.rst</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<label class="sidebar-toggle secondary-toggle btn btn-sm" for="__secondary"title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</label>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Sparse Linear Algebra</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#onemkl-intel-cpu-and-gpu-backends">OneMKL Intel CPU and GPU backends</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#cusparse-backend">cuSPARSE backend</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#rocsparse-backend">rocSPARSE backend</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#operation-algorithms-mapping">Operation algorithms mapping</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#spmm">spmm</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#spmv">spmv</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#spsv">spsv</a></li>
+</ul>
+</li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="sparse-linear-algebra">
+<span id="onemath-sparse-linear-algebra"></span><h1>Sparse Linear Algebra<a class="headerlink" href="#sparse-linear-algebra" title="Link to this heading">#</a></h1>
+<p>See the latest specification for the sparse domain <a class="reference external" href="https://oneapi-spec.uxlfoundation.org/specifications/oneapi/latest/elements/onemath/source/domains/spblas/spblas">here</a>.</p>
+<p>This page documents implementation specific or backend specific details of the
+sparse domain.</p>
+<section id="onemkl-intel-cpu-and-gpu-backends">
+<h2>OneMKL Intel CPU and GPU backends<a class="headerlink" href="#onemkl-intel-cpu-and-gpu-backends" title="Link to this heading">#</a></h2>
+<p>Currently known limitations:</p>
+<ul class="simple">
+<li><p>All operations’ algorithms except <code class="docutils literal notranslate"><span class="pre">no_optimize_alg</span></code> map to the default
+algorithm.</p></li>
+<li><p>The required external workspace size is always 0 bytes.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">oneapi::math::sparse::set_csr_data</span></code> and
+<code class="docutils literal notranslate"><span class="pre">oneapi::math::sparse::set_coo_data</span></code> functions cannot be used on a handle
+that has already been used for an operation or its optimize function. Doing so
+will throw a <code class="docutils literal notranslate"><span class="pre">oneapi::math::unimplemented</span></code> exception.</p></li>
+<li><p>Using <code class="docutils literal notranslate"><span class="pre">spsv</span></code> with the <code class="docutils literal notranslate"><span class="pre">oneapi::math::sparse::spsv_alg::no_optimize_alg</span></code> and
+a sparse matrix that does not have the
+<code class="docutils literal notranslate"><span class="pre">oneapi::math::sparse::matrix_property::sorted</span></code> property will throw a
+<code class="docutils literal notranslate"><span class="pre">oneapi::math::unimplemented</span></code> exception.</p></li>
+<li><p>Using <code class="docutils literal notranslate"><span class="pre">spmm</span></code> on Intel GPU with a sparse matrix that is
+<code class="docutils literal notranslate"><span class="pre">oneapi::math::transpose::conjtrans</span></code> and has the
+<code class="docutils literal notranslate"><span class="pre">oneapi::math::sparse::matrix_property::symmetric</span></code> property will throw a
+<code class="docutils literal notranslate"><span class="pre">oneapi::math::unimplemented</span></code> exception.</p></li>
+<li><p>Using <code class="docutils literal notranslate"><span class="pre">spmv</span></code> with a sparse matrix that is
+<code class="docutils literal notranslate"><span class="pre">oneapi::math::transpose::conjtrans</span></code> with a <code class="docutils literal notranslate"><span class="pre">type_view</span></code>
+<code class="docutils literal notranslate"><span class="pre">matrix_descr::symmetric</span></code> or <code class="docutils literal notranslate"><span class="pre">matrix_descr::hermitian</span></code> will throw a
+<code class="docutils literal notranslate"><span class="pre">oneapi::math::unimplemented</span></code> exception.</p></li>
+<li><p>Using <code class="docutils literal notranslate"><span class="pre">spsv</span></code> on Intel GPU with a sparse matrix that is
+<code class="docutils literal notranslate"><span class="pre">oneapi::math::transpose::conjtrans</span></code> and will throw a
+<code class="docutils literal notranslate"><span class="pre">oneapi::math::unimplemented</span></code> exception.</p></li>
+<li><p>Scalar parameters <code class="docutils literal notranslate"><span class="pre">alpha</span></code> and <code class="docutils literal notranslate"><span class="pre">beta</span></code> should be host pointers to prevent
+synchronizations and copies to the host.</p></li>
+</ul>
+</section>
+<section id="cusparse-backend">
+<h2>cuSPARSE backend<a class="headerlink" href="#cusparse-backend" title="Link to this heading">#</a></h2>
+<p>Currently known limitations:</p>
+<ul class="simple">
+<li><p>The COO format requires the indices to be sorted by row. See the <a class="reference external" href="https://docs.nvidia.com/cuda/cusparse/index.html#coordinate-coo">cuSPARSE
+documentation</a>. Sparse
+operations using matrices with the COO format without the property
+<code class="docutils literal notranslate"><span class="pre">matrix_property::sorted_by_rows</span></code> or <code class="docutils literal notranslate"><span class="pre">matrix_property::sorted</span></code> will throw
+a <code class="docutils literal notranslate"><span class="pre">oneapi::math::unimplemented</span></code> exception.</p></li>
+<li><p>Using <code class="docutils literal notranslate"><span class="pre">spmm</span></code> with the algorithm <code class="docutils literal notranslate"><span class="pre">spmm_alg::csr_alg3</span></code> and an <code class="docutils literal notranslate"><span class="pre">opA</span></code> other
+than <code class="docutils literal notranslate"><span class="pre">transpose::nontrans</span></code> or an <code class="docutils literal notranslate"><span class="pre">opB</span></code> <code class="docutils literal notranslate"><span class="pre">transpose::conjtrans</span></code> will throw
+a <code class="docutils literal notranslate"><span class="pre">oneapi::math::unimplemented</span></code> exception.</p></li>
+<li><p>Using <code class="docutils literal notranslate"><span class="pre">spmm</span></code> with the algorithm <code class="docutils literal notranslate"><span class="pre">spmm_alg::csr_alg3</span></code>,
+<code class="docutils literal notranslate"><span class="pre">opB=transpose::trans</span></code> and real fp64 precision will throw a
+<code class="docutils literal notranslate"><span class="pre">oneapi::math::unimplemented</span></code> exception. This configuration can fail as of
+CUDA 12.6.2, see the related issue
+<a href="#id2"><span class="problematic" id="id3">`here&lt;https://forums.developer.nvidia.com/t/cusparse-spmm-sample-failing-with-misaligned-address/311022&gt;`_</span></a>.</p></li>
+<li><p>Using <code class="docutils literal notranslate"><span class="pre">spmv</span></code> with a <code class="docutils literal notranslate"><span class="pre">type_view</span></code> other than <code class="docutils literal notranslate"><span class="pre">matrix_descr::general</span></code> will
+throw a <code class="docutils literal notranslate"><span class="pre">oneapi::math::unimplemented</span></code> exception.</p></li>
+<li><p>Using <code class="docutils literal notranslate"><span class="pre">spsv</span></code> with the algorithm <code class="docutils literal notranslate"><span class="pre">spsv_alg::no_optimize_alg</span></code> may still
+perform some mandatory preprocessing.</p></li>
+<li><p>oneMath does not provide a way to use non-default algorithms without
+calling preprocess functions such as <code class="docutils literal notranslate"><span class="pre">cusparseSpMM_preprocess</span></code> or
+<code class="docutils literal notranslate"><span class="pre">cusparseSpMV_preprocess</span></code>. Feel free to create an issue if this is needed.</p></li>
+</ul>
+</section>
+<section id="rocsparse-backend">
+<h2>rocSPARSE backend<a class="headerlink" href="#rocsparse-backend" title="Link to this heading">#</a></h2>
+<p>Currently known limitations:</p>
+<ul class="simple">
+<li><p>Using <code class="docutils literal notranslate"><span class="pre">spmv</span></code> with a <code class="docutils literal notranslate"><span class="pre">type_view</span></code> other than <code class="docutils literal notranslate"><span class="pre">matrix_descr::general</span></code> will
+throw a <code class="docutils literal notranslate"><span class="pre">oneapi::math::unimplemented</span></code> exception.</p></li>
+<li><p>The COO format requires the indices to be sorted by row then by column. See
+the <a class="reference external" href="https://rocm.docs.amd.com/projects/rocSPARSE/en/latest/how-to/basics.html#coo-storage-format">rocSPARSE COO documentation</a>.
+Sparse operations using matrices with the COO format without the property
+<code class="docutils literal notranslate"><span class="pre">matrix_property::sorted</span></code> will throw a <code class="docutils literal notranslate"><span class="pre">oneapi::math::unimplemented</span></code>
+exception.</p></li>
+<li><p>The CSR format requires the column indices to be sorted within each row. See
+the <a class="reference external" href="https://rocm.docs.amd.com/projects/rocSPARSE/en/latest/how-to/basics.html#csr-storage-format">rocSPARSE CSR documentation</a>.
+Sparse operations using matrices with the CSR format without the property
+<code class="docutils literal notranslate"><span class="pre">matrix_property::sorted</span></code> will throw a <code class="docutils literal notranslate"><span class="pre">oneapi::math::unimplemented</span></code>
+exception.</p></li>
+<li><p>The same sparse matrix handle cannot be reused for multiple operations
+<code class="docutils literal notranslate"><span class="pre">spmm</span></code>, <code class="docutils literal notranslate"><span class="pre">spmv</span></code>, or <code class="docutils literal notranslate"><span class="pre">spsv</span></code>. Doing so will throw a
+<code class="docutils literal notranslate"><span class="pre">oneapi::math::unimplemented</span></code> exception. See <a class="reference external" href="https://github.com/ROCm/rocSPARSE/issues/332">#332</a>.</p></li>
+</ul>
+</section>
+<section id="operation-algorithms-mapping">
+<h2>Operation algorithms mapping<a class="headerlink" href="#operation-algorithms-mapping" title="Link to this heading">#</a></h2>
+<p>The following tables describe how a oneMath algorithm maps to the backend’s
+algorithms. Refer to the backend’s documentation for a more detailed explanation
+of the algorithms.</p>
+<p>Backends with no equivalent algorithms will fallback to the backend’s default
+behavior.</p>
+<section id="spmm">
+<h3>spmm<a class="headerlink" href="#spmm" title="Link to this heading">#</a></h3>
+</section>
+<section id="spmv">
+<h3>spmv<a class="headerlink" href="#spmv" title="Link to this heading">#</a></h3>
+</section>
+<section id="spsv">
+<h3>spsv<a class="headerlink" href="#spsv" title="Link to this heading">#</a></h3>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../using_onemath_with_cmake.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Using oneMath in your project with CMake</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../create_new_backend.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Integrating a Third-Party Library to oneAPI Math Library (oneMath)</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#onemkl-intel-cpu-and-gpu-backends">OneMKL Intel CPU and GPU backends</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#cusparse-backend">cuSPARSE backend</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#rocsparse-backend">rocSPARSE backend</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#operation-algorithms-mapping">Operation algorithms mapping</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#spmm">spmm</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#spmv">spmv</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#spsv">spsv</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Intel Corporation
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2020-2022, Intel Corporation.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+<div class="extra_footer">
+  <p align="right"><a href="https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html">Cookies</a></p>
+</div>
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=8d27b9dea8ad943066ae"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=8d27b9dea8ad943066ae"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
