@@ -389,7 +389,7 @@ document.write(`
 <ol class="arabic simple">
 <li><p>Build and install AdaptiveCpp. For a detailed description of available
 AdaptiveCpp backends, their dependencies, and installation, see the
-<a class="reference external" href="https://github.com/AdaptiveCpp/AdaptiveCpp/blob/develop/doc/installing.md#compilation-flows">AdaptiveCpp installation readme</a>.</p></li>
+<a class="reference external" href="https://adaptivecpp.github.io/AdaptiveCpp/installing/">AdaptiveCpp installation readme</a>.</p></li>
 <li><p>Clone this project. The root directory of the cloned repository will be
 referred to as <code class="docutils literal notranslate"><span class="pre">&lt;path</span> <span class="pre">to</span> <span class="pre">onemath&gt;</span></code>.</p></li>
 <li><p>Download and install the <a class="reference external" href="https://github.com/uxlfoundation/oneMath?tab=readme-ov-file#software-requirements">required dependencies</a>
@@ -403,13 +403,13 @@ selecting the desired backends to build with.</p>
 <p>On Linux (other OSes are not supported with the AdaptiveCpp compiler):</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Inside &lt;path to onemath&gt;</span>
 mkdir<span class="w"> </span>build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>build
-cmake<span class="w"> </span>..<span class="w"> </span>-DONEMATH_SYCL_IMPLEMENTATION<span class="o">=</span>hipsycl<span class="w">   </span><span class="se">\ </span><span class="c1"># Indicate that AdaptiveCpp is being used.</span>
-<span class="w">        </span>-DENABLE_MKLGPU_BACKEND<span class="o">=</span>False<span class="w">            </span><span class="se">\ </span><span class="c1"># MKLGPU backend is not supported by AdaptiveCpp</span>
-<span class="w">        </span>-DENABLE_&lt;BACKEND_NAME&gt;_BACKEND<span class="o">=</span>True<span class="w">     </span><span class="se">\ </span><span class="c1"># Enable backend(s) (optional)</span>
-<span class="w">        </span>-DENABLE_&lt;BACKEND_NAME_2&gt;_BACKEND<span class="o">=</span>True<span class="w">   </span><span class="se">\ </span><span class="c1"># Multiple backends can be enabled at once.</span>
-<span class="w">        </span>-DHIPSYCL_TARGETS<span class="o">=</span>omp/<span class="p">;</span>hip:gfx90a,gfx906<span class="w"> </span><span class="se">\ </span><span class="c1"># Set target architectures depending on supported devices.</span>
-<span class="w">        </span>-DBUILD_FUNCTIONAL_TESTS<span class="o">=</span>False<span class="w">           </span><span class="se">\ </span><span class="c1"># See section *Building the tests* for more on building tests. True by default.</span>
-<span class="w">        </span>-DBUILD_EXAMPLES<span class="o">=</span>False<span class="w">                   </span><span class="c1"># Optional: True by default.</span>
+cmake<span class="w"> </span>..<span class="w"> </span>-DONEMATH_SYCL_IMPLEMENTATION<span class="o">=</span>adaptivecpp<span class="w"> </span><span class="se">\ </span><span class="c1"># Indicate that AdaptiveCpp is being used.</span>
+<span class="w">        </span>-DENABLE_MKLGPU_BACKEND<span class="o">=</span>False<span class="w">              </span><span class="se">\ </span><span class="c1"># MKLGPU backend is not supported by AdaptiveCpp</span>
+<span class="w">        </span>-DENABLE_&lt;BACKEND_NAME&gt;_BACKEND<span class="o">=</span>True<span class="w">       </span><span class="se">\ </span><span class="c1"># Enable backend(s) (optional)</span>
+<span class="w">        </span>-DENABLE_&lt;BACKEND_NAME_2&gt;_BACKEND<span class="o">=</span>True<span class="w">     </span><span class="se">\ </span><span class="c1"># Multiple backends can be enabled at once.</span>
+<span class="w">        </span>-DACPP_TARGETS<span class="o">=</span>omp<span class="se">\;</span>hip:gfx90a,gfx906<span class="w">      </span><span class="se">\ </span><span class="c1"># Set target architectures depending on supported devices.</span>
+<span class="w">        </span>-DBUILD_FUNCTIONAL_TESTS<span class="o">=</span>False<span class="w">             </span><span class="se">\ </span><span class="c1"># See section *Building the tests* for more on building tests. True by default.</span>
+<span class="w">        </span>-DBUILD_EXAMPLES<span class="o">=</span>False<span class="w">                     </span><span class="c1"># Optional: True by default.</span>
 cmake<span class="w"> </span>--build<span class="w"> </span>.
 cmake<span class="w"> </span>--install<span class="w"> </span>.<span class="w"> </span>--prefix<span class="w"> </span>&lt;path_to_install_dir&gt;<span class="w"> </span><span class="c1"># required to have full package structure</span>
 </pre></div>
@@ -421,8 +421,8 @@ backends for the compilers are given in the table at <a class="reference externa
 configurations table</a>,
 and the CMake option names are given in the table below. Some backends may
 require additional parameters to be set. See the relevant section below for
-additional guidance. The target architectures must be specified with
-<code class="docutils literal notranslate"><span class="pre">HIP_TARGETS</span></code>. See the <a class="reference external" href="https://github.com/AdaptiveCpp/AdaptiveCpp/blob/develop/doc/using-hipsycl.md#adaptivecpp-targets-specification">AdaptiveCpp documentation</a>.</p>
+additional guidance. The target architectures may be specified with <code class="docutils literal notranslate"><span class="pre">ACPP_TARGETS</span></code>,
+otherwise the <code class="docutils literal notranslate"><span class="pre">generic</span></code> target is used. See the <a class="reference external" href="https://adaptivecpp.github.io/AdaptiveCpp/using-acpp/#adaptivecpp-targets-specification">AdaptiveCpp documentation</a>.</p>
 <p>If a backend library supports multiple domains (i.e. BLAS, DFT, RNG), it may be
 desirable to only enable selected domains. For this, the <code class="docutils literal notranslate"><span class="pre">TARGET_DOMAINS</span></code>
 variable should be set. For further details, see <span class="xref std std-ref">_build_target_domains</span>.</p>
@@ -503,12 +503,12 @@ information.</p>
 <span id="build-for-cuda-adaptivecpp"></span><h3>Building for CUDA<a class="headerlink" href="#building-for-cuda" title="Link to this heading">#</a></h3>
 <p>The CUDA backends can be enabled with <code class="docutils literal notranslate"><span class="pre">ENABLE_CUBLAS_BACKEND</span></code>,
 <code class="docutils literal notranslate"><span class="pre">ENABLE_CUFFT_BACKEND</span></code> and <code class="docutils literal notranslate"><span class="pre">ENABLE_CURAND_BACKEND</span></code>.</p>
-<p>The target architecture must be set using the <code class="docutils literal notranslate"><span class="pre">HIPSYCL_TARGETS</span></code> parameter. For
+<p>The target architecture may be specified using the <code class="docutils literal notranslate"><span class="pre">ACPP_TARGETS</span></code> parameter. For
 example, to target a Nvidia A100 (Ampere architecture), set
-<code class="docutils literal notranslate"><span class="pre">-DHIPSYCL_TARGETS=cuda:sm_80</span></code>, where the figure <code class="docutils literal notranslate"><span class="pre">80</span></code> corresponds to a CUDA
+<code class="docutils literal notranslate"><span class="pre">-DACPP_TARGETS=cuda:sm_80</span></code>, where the figure <code class="docutils literal notranslate"><span class="pre">80</span></code> corresponds to a CUDA
 compute capability of 8.0. The correspondence between compute capabilities and
 Nvidia GPU products is given on the <a class="reference external" href="https://developer.nvidia.com/cuda-gpus">Nvidia website</a>. Multiple architectures can be
-enabled using a comma separated list. See the <a class="reference external" href="https://github.com/AdaptiveCpp/AdaptiveCpp/blob/develop/doc/using-hipsycl.md#adaptivecpp-targets-specification">AdaptiveCpp documentation</a>.</p>
+enabled using a comma separated list. See the <a class="reference external" href="https://adaptivecpp.github.io/AdaptiveCpp/using-acpp/#adaptivecpp-targets-specification">AdaptiveCpp documentation</a>.</p>
 <p>No additional parameters are required for using CUDA libraries. In most cases,
 the CUDA libraries should be found automatically by CMake.</p>
 </section>
@@ -516,12 +516,12 @@ the CUDA libraries should be found automatically by CMake.</p>
 <span id="build-for-rocm-adaptivecpp"></span><h3>Building for ROCm<a class="headerlink" href="#building-for-rocm" title="Link to this heading">#</a></h3>
 <p>The ROCm backends can be enabled with <code class="docutils literal notranslate"><span class="pre">ENABLE_ROCBLAS_BACKEND</span></code>,
 <code class="docutils literal notranslate"><span class="pre">ENABLE_ROCFFT_BACKEND</span></code> and <code class="docutils literal notranslate"><span class="pre">ENABLE_ROCRAND_BACKEND</span></code>.</p>
-<p>The target architecture must be set using the <code class="docutils literal notranslate"><span class="pre">HIPSYCL_TARGETS</span></code> parameter. See
-the <a class="reference external" href="https://github.com/AdaptiveCpp/AdaptiveCpp/blob/develop/doc/using-hipsycl.md#adaptivecpp-targets-specification">AdaptiveCpp documentation</a>.
-For example, to target the MI200 series, set <code class="docutils literal notranslate"><span class="pre">-DHIPSYCL_TARGETS=hip:gfx90a</span></code>.
+<p>The target architecture may be specified using the <code class="docutils literal notranslate"><span class="pre">ACPP_TARGETS</span></code> parameter. See
+the <a class="reference external" href="https://adaptivecpp.github.io/AdaptiveCpp/using-acpp/#adaptivecpp-targets-specification">AdaptiveCpp documentation</a>.
+For example, to target the MI200 series, set <code class="docutils literal notranslate"><span class="pre">-DACPP_TARGETS=hip:gfx90a</span></code>.
 Multiple architectures can be enabled using a comma separated list. For example,
-<code class="docutils literal notranslate"><span class="pre">-DHIPSYCL_TARGETS=hip:gfx906,gfx90a</span></code>, and multiple APIs with a semicolon
-(<code class="docutils literal notranslate"><span class="pre">-DHIPSYCL_TARGETS=omp\;hip:gfx906,gfx90a</span></code>).</p>
+<code class="docutils literal notranslate"><span class="pre">-DACPP_TARGETS=hip:gfx906,gfx90a</span></code>, and multiple APIs with a semicolon
+(<code class="docutils literal notranslate"><span class="pre">-DACPP_TARGETS=omp\;hip:gfx906,gfx90a</span></code>).</p>
 <p>For common AMD GPU architectures, see the <a class="reference internal" href="building_the_project_with_dpcpp.html#build-for-rocm-dpcpp"><span class="std std-ref">Building for ROCm</span></a> in the
 DPC++ build guide.</p>
 </section>
