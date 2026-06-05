@@ -51,6 +51,7 @@ endif()
 option(ENABLE_CUBLAS_BACKEND "Enable the cuBLAS backend for the BLAS interface" OFF)
 option(ENABLE_ROCBLAS_BACKEND "Enable the rocBLAS backend for the BLAS interface" OFF)
 option(ENABLE_NETLIB_BACKEND "Enable the Netlib backend for the BLAS interface" OFF)
+option(ENABLE_OPENBLAS_BACKEND "Enable the OpenBLAS backend for the BLAS interface" OFF)
 option(ENABLE_GENERIC_BLAS_BACKEND "Enable the generic BLAS backend for the BLAS interface. Cannot be used with other BLAS backends." OFF)
 
 # rand
@@ -95,6 +96,7 @@ if(ENABLE_MKLCPU_BACKEND
         OR ENABLE_CUBLAS_BACKEND
         OR ENABLE_ROCBLAS_BACKEND
         OR ENABLE_NETLIB_BACKEND
+		OR ENABLE_OPENBLAS_BACKEND
         OR ENABLE_GENERIC_BLAS_BACKEND
         OR ENABLE_ARMPL_BACKEND)
   list(APPEND DOMAINS_LIST "blas")
@@ -133,6 +135,7 @@ if(ENABLE_GENERIC_BLAS_BACKEND
 		OR ENABLE_MKLGPU_BACKEND
 		OR ENABLE_CUBLAS_BACKEND
 		OR ENABLE_ROCBLAS_BACKEND
+		OR ENABLE_OPENBLAS_BACKEND
 		OR ENABLE_NETLIB_BACKEND))
 	message(FATAL_ERROR "ENABLE_GENERIC_BLAS_BACKEND cannot be enabled at the same time as other BLAS backends.")
 endif()
