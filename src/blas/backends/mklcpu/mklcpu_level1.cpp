@@ -27,6 +27,9 @@
 
 #include "../mkl_common/mkl_blas_backend.hpp"
 
+// Define backend identifier for conditional workarounds in mkl_common
+#define ONEMATH_MKLCPU_BACKEND
+
 namespace oneapi {
 namespace math {
 namespace blas {
@@ -47,3 +50,5 @@ namespace blas_major = ::oneapi::mkl::blas::row_major;
 } // namespace blas
 } // namespace math
 } // namespace oneapi
+
+#undef ONEMATH_MKLCPU_BACKEND

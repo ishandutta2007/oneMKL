@@ -17,19 +17,19 @@
 # SPDX-License-Identifier: Apache-2.0
 #===============================================================================
 
-set(PACKAGE_VERSION "2025.3.0")
+set(PACKAGE_VERSION "2026.0.0")
 
 if(PACKAGE_VERSION VERSION_LESS PACKAGE_FIND_VERSION)
   set(PACKAGE_VERSION_COMPATIBLE FALSE)
 else()
 
-  if("2025.3.0" MATCHES "^([0-9]+)\\.")
+  if("2026.0.0" MATCHES "^([0-9]+)\\.")
     set(CVF_VERSION_MAJOR "${CMAKE_MATCH_1}")
     if(NOT CVF_VERSION_MAJOR VERSION_EQUAL 0)
       string(REGEX REPLACE "^0+" "" CVF_VERSION_MAJOR "${CVF_VERSION_MAJOR}")
     endif()
   else()
-    set(CVF_VERSION_MAJOR "2025.3.0")
+    set(CVF_VERSION_MAJOR "2026.0.0")
   endif()
 
   if(PACKAGE_FIND_VERSION_RANGE)

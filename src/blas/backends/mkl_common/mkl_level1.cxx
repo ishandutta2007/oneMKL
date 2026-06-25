@@ -17,6 +17,199 @@
 * SPDX-License-Identifier: Apache-2.0
 *******************************************************************************/
 
+// Workaround for oneMKL 2026.0 SSE2 bug: iamax/iamin return incorrect indices with incx > 1
+// Only apply on MKLCPU backend where SSE2 fallback is used
+#if defined(ONEMATH_MKLCPU_BACKEND) && defined(__INTEL_MKL__) && __INTEL_MKL__ == 2026
+#define APPLY_ONEMKL_2026_IAMIN_IAMAX_WORKAROUND
+#pragma message("oneMKL 2026.0 iamin/iamax workaround ENABLED for MKLCPU backend")
+
+namespace {
+
+// Helper: compute absolute value (magnitude) for iamin/iamax
+template <typename T>
+inline T abs_value(T val) {
+    return sycl::fabs(val);
+}
+
+template <typename T>
+inline T abs_value(std::complex<T> val) {
+    return sycl::fabs(val.real()) + sycl::fabs(val.imag());
+}
+
+// SYCL reference implementation of iamin for buffer API
+// Used as workaround for oneMKL 2026.0 SSE2 bug when |incx| > 1
+template <typename T>
+void sycl_iamin_impl(sycl::queue& queue, std::int64_t n, sycl::buffer<T, 1>& x, std::int64_t incx,
+                     sycl::buffer<std::int64_t, 1>& result, oneapi::math::index_base base) {
+    queue.submit([&](sycl::handler& cgh) {
+        auto x_acc = x.template get_access<sycl::access::mode::read>(cgh);
+        auto res_acc = result.template get_access<sycl::access::mode::write>(cgh);
+
+        cgh.single_task([=]() {
+            if (n < 1 || incx < 1) {
+                res_acc[0] = 0;
+                return;
+            }
+
+            std::int64_t min_idx = 0;
+            auto min_val = abs_value(x_acc[0]);
+
+            if (sycl::isnan(min_val)) {
+                res_acc[0] = (base == oneapi::math::index_base::zero ? 0 : 1);
+                return;
+            }
+
+            std::int64_t abs_incx = (incx > 0) ? incx : -incx;
+            for (std::int64_t logical_i = 1; logical_i < n; ++logical_i) {
+                std::int64_t i = logical_i * abs_incx;
+                auto curr_val = abs_value(x_acc[i]);
+
+                if (sycl::isnan(curr_val)) {
+                    res_acc[0] = logical_i + (base == oneapi::math::index_base::zero ? 0 : 1);
+                    return;
+                }
+
+                if (curr_val < min_val) {
+                    min_idx = logical_i;
+                    min_val = curr_val;
+                }
+            }
+
+            res_acc[0] = min_idx + (base == oneapi::math::index_base::zero ? 0 : 1);
+        });
+    });
+}
+
+// SYCL reference implementation of iamax for buffer API
+template <typename T>
+void sycl_iamax_impl(sycl::queue& queue, std::int64_t n, sycl::buffer<T, 1>& x, std::int64_t incx,
+                     sycl::buffer<std::int64_t, 1>& result, oneapi::math::index_base base) {
+    queue.submit([&](sycl::handler& cgh) {
+        auto x_acc = x.template get_access<sycl::access::mode::read>(cgh);
+        auto res_acc = result.template get_access<sycl::access::mode::write>(cgh);
+
+        cgh.single_task([=]() {
+            if (n < 1 || incx < 1) {
+                res_acc[0] = 0;
+                return;
+            }
+
+            std::int64_t max_idx = 0;
+            auto max_val = abs_value(x_acc[0]);
+
+            if (sycl::isnan(max_val)) {
+                res_acc[0] = (base == oneapi::math::index_base::zero ? 0 : 1);
+                return;
+            }
+
+            std::int64_t abs_incx = (incx > 0) ? incx : -incx;
+            for (std::int64_t logical_i = 1; logical_i < n; ++logical_i) {
+                std::int64_t i = logical_i * abs_incx;
+                auto curr_val = abs_value(x_acc[i]);
+
+                if (sycl::isnan(curr_val)) {
+                    res_acc[0] = logical_i + (base == oneapi::math::index_base::zero ? 0 : 1);
+                    return;
+                }
+
+                if (curr_val > max_val) {
+                    max_idx = logical_i;
+                    max_val = curr_val;
+                }
+            }
+
+            res_acc[0] = max_idx + (base == oneapi::math::index_base::zero ? 0 : 1);
+        });
+    });
+}
+
+// SYCL reference implementation of iamin for USM API
+template <typename T>
+sycl::event sycl_iamin_usm_impl(sycl::queue& queue, std::int64_t n, const T* x, std::int64_t incx,
+                                std::int64_t* result, oneapi::math::index_base base,
+                                const std::vector<sycl::event>& dependencies) {
+    return queue.submit([&](sycl::handler& cgh) {
+        cgh.depends_on(dependencies);
+        cgh.single_task([=]() {
+            if (n < 1 || incx < 1) {
+                *result = 0;
+                return;
+            }
+
+            std::int64_t min_idx = 0;
+            auto min_val = abs_value(x[0]);
+
+            if (sycl::isnan(min_val)) {
+                *result = (base == oneapi::math::index_base::zero ? 0 : 1);
+                return;
+            }
+
+            std::int64_t abs_incx = (incx > 0) ? incx : -incx;
+            for (std::int64_t logical_i = 1; logical_i < n; ++logical_i) {
+                std::int64_t i = logical_i * abs_incx;
+                auto curr_val = abs_value(x[i]);
+
+                if (sycl::isnan(curr_val)) {
+                    *result = logical_i + (base == oneapi::math::index_base::zero ? 0 : 1);
+                    return;
+                }
+
+                if (curr_val < min_val) {
+                    min_idx = logical_i;
+                    min_val = curr_val;
+                }
+            }
+
+            *result = min_idx + (base == oneapi::math::index_base::zero ? 0 : 1);
+        });
+    });
+}
+
+// SYCL reference implementation of iamax for USM API
+template <typename T>
+sycl::event sycl_iamax_usm_impl(sycl::queue& queue, std::int64_t n, const T* x, std::int64_t incx,
+                                std::int64_t* result, oneapi::math::index_base base,
+                                const std::vector<sycl::event>& dependencies) {
+    return queue.submit([&](sycl::handler& cgh) {
+        cgh.depends_on(dependencies);
+        cgh.single_task([=]() {
+            if (n < 1 || incx < 1) {
+                *result = 0;
+                return;
+            }
+
+            std::int64_t max_idx = 0;
+            auto max_val = abs_value(x[0]);
+
+            if (sycl::isnan(max_val)) {
+                *result = (base == oneapi::math::index_base::zero ? 0 : 1);
+                return;
+            }
+
+            std::int64_t abs_incx = (incx > 0) ? incx : -incx;
+            for (std::int64_t logical_i = 1; logical_i < n; ++logical_i) {
+                std::int64_t i = logical_i * abs_incx;
+                auto curr_val = abs_value(x[i]);
+
+                if (sycl::isnan(curr_val)) {
+                    *result = logical_i + (base == oneapi::math::index_base::zero ? 0 : 1);
+                    return;
+                }
+
+                if (curr_val > max_val) {
+                    max_idx = logical_i;
+                    max_val = curr_val;
+                }
+            }
+
+            *result = max_idx + (base == oneapi::math::index_base::zero ? 0 : 1);
+        });
+    });
+}
+
+} // anonymous namespace
+#endif
+
 // Buffer APIs
 
 void asum(sycl::queue& queue, std::int64_t n, sycl::buffer<std::complex<float>, 1>& x,
@@ -284,54 +477,126 @@ void swap(sycl::queue& queue, std::int64_t n, sycl::buffer<std::complex<double>,
 
 void iamax(sycl::queue& queue, std::int64_t n, sycl::buffer<float, 1>& x, std::int64_t incx,
            sycl::buffer<std::int64_t, 1>& result, oneapi::math::index_base base) {
-    RETHROW_ONEMKL_EXCEPTIONS(
-        blas_major::iamax(queue, n, x, incx, result, detail::get_onemkl_index_base(base)));
+#ifdef APPLY_ONEMKL_2026_IAMIN_IAMAX_WORKAROUND
+    if (std::abs(incx) > 1) {
+        sycl_iamax_impl(queue, n, x, incx, result, base);
+    }
+    else {
+#endif
+        RETHROW_ONEMKL_EXCEPTIONS(
+            blas_major::iamax(queue, n, x, incx, result, detail::get_onemkl_index_base(base)));
+#ifdef APPLY_ONEMKL_2026_IAMIN_IAMAX_WORKAROUND
+    }
+#endif
 }
 
 void iamax(sycl::queue& queue, std::int64_t n, sycl::buffer<double, 1>& x, std::int64_t incx,
            sycl::buffer<std::int64_t, 1>& result, oneapi::math::index_base base) {
-    RETHROW_ONEMKL_EXCEPTIONS(
-        blas_major::iamax(queue, n, x, incx, result, detail::get_onemkl_index_base(base)));
+#ifdef APPLY_ONEMKL_2026_IAMIN_IAMAX_WORKAROUND
+    if (std::abs(incx) > 1) {
+        sycl_iamax_impl(queue, n, x, incx, result, base);
+    }
+    else {
+#endif
+        RETHROW_ONEMKL_EXCEPTIONS(
+            blas_major::iamax(queue, n, x, incx, result, detail::get_onemkl_index_base(base)));
+#ifdef APPLY_ONEMKL_2026_IAMIN_IAMAX_WORKAROUND
+    }
+#endif
 }
 
 void iamax(sycl::queue& queue, std::int64_t n, sycl::buffer<std::complex<float>, 1>& x,
            std::int64_t incx, sycl::buffer<std::int64_t, 1>& result,
            oneapi::math::index_base base) {
-    RETHROW_ONEMKL_EXCEPTIONS(
-        blas_major::iamax(queue, n, x, incx, result, detail::get_onemkl_index_base(base)));
+#ifdef APPLY_ONEMKL_2026_IAMIN_IAMAX_WORKAROUND
+    if (std::abs(incx) > 1) {
+        sycl_iamax_impl(queue, n, x, incx, result, base);
+    }
+    else {
+#endif
+        RETHROW_ONEMKL_EXCEPTIONS(
+            blas_major::iamax(queue, n, x, incx, result, detail::get_onemkl_index_base(base)));
+#ifdef APPLY_ONEMKL_2026_IAMIN_IAMAX_WORKAROUND
+    }
+#endif
 }
 
 void iamax(sycl::queue& queue, std::int64_t n, sycl::buffer<std::complex<double>, 1>& x,
            std::int64_t incx, sycl::buffer<std::int64_t, 1>& result,
            oneapi::math::index_base base) {
-    RETHROW_ONEMKL_EXCEPTIONS(
-        blas_major::iamax(queue, n, x, incx, result, detail::get_onemkl_index_base(base)));
+#ifdef APPLY_ONEMKL_2026_IAMIN_IAMAX_WORKAROUND
+    if (std::abs(incx) > 1) {
+        sycl_iamax_impl(queue, n, x, incx, result, base);
+    }
+    else {
+#endif
+        RETHROW_ONEMKL_EXCEPTIONS(
+            blas_major::iamax(queue, n, x, incx, result, detail::get_onemkl_index_base(base)));
+#ifdef APPLY_ONEMKL_2026_IAMIN_IAMAX_WORKAROUND
+    }
+#endif
 }
 
 void iamin(sycl::queue& queue, std::int64_t n, sycl::buffer<float, 1>& x, std::int64_t incx,
            sycl::buffer<std::int64_t, 1>& result, oneapi::math::index_base base) {
-    RETHROW_ONEMKL_EXCEPTIONS(
-        blas_major::iamin(queue, n, x, incx, result, detail::get_onemkl_index_base(base)));
+#ifdef APPLY_ONEMKL_2026_IAMIN_IAMAX_WORKAROUND
+    if (std::abs(incx) > 1) {
+        sycl_iamin_impl(queue, n, x, incx, result, base);
+    }
+    else {
+#endif
+        RETHROW_ONEMKL_EXCEPTIONS(
+            blas_major::iamin(queue, n, x, incx, result, detail::get_onemkl_index_base(base)));
+#ifdef APPLY_ONEMKL_2026_IAMIN_IAMAX_WORKAROUND
+    }
+#endif
 }
 
 void iamin(sycl::queue& queue, std::int64_t n, sycl::buffer<double, 1>& x, std::int64_t incx,
            sycl::buffer<std::int64_t, 1>& result, oneapi::math::index_base base) {
-    RETHROW_ONEMKL_EXCEPTIONS(
-        blas_major::iamin(queue, n, x, incx, result, detail::get_onemkl_index_base(base)));
+#ifdef APPLY_ONEMKL_2026_IAMIN_IAMAX_WORKAROUND
+    if (std::abs(incx) > 1) {
+        sycl_iamin_impl(queue, n, x, incx, result, base);
+    }
+    else {
+#endif
+        RETHROW_ONEMKL_EXCEPTIONS(
+            blas_major::iamin(queue, n, x, incx, result, detail::get_onemkl_index_base(base)));
+#ifdef APPLY_ONEMKL_2026_IAMIN_IAMAX_WORKAROUND
+    }
+#endif
 }
 
 void iamin(sycl::queue& queue, std::int64_t n, sycl::buffer<std::complex<float>, 1>& x,
            std::int64_t incx, sycl::buffer<std::int64_t, 1>& result,
            oneapi::math::index_base base) {
-    RETHROW_ONEMKL_EXCEPTIONS(
-        blas_major::iamin(queue, n, x, incx, result, detail::get_onemkl_index_base(base)));
+#ifdef APPLY_ONEMKL_2026_IAMIN_IAMAX_WORKAROUND
+    if (std::abs(incx) > 1) {
+        sycl_iamin_impl(queue, n, x, incx, result, base);
+    }
+    else {
+#endif
+        RETHROW_ONEMKL_EXCEPTIONS(
+            blas_major::iamin(queue, n, x, incx, result, detail::get_onemkl_index_base(base)));
+#ifdef APPLY_ONEMKL_2026_IAMIN_IAMAX_WORKAROUND
+    }
+#endif
 }
 
 void iamin(sycl::queue& queue, std::int64_t n, sycl::buffer<std::complex<double>, 1>& x,
            std::int64_t incx, sycl::buffer<std::int64_t, 1>& result,
            oneapi::math::index_base base) {
-    RETHROW_ONEMKL_EXCEPTIONS(
-        blas_major::iamin(queue, n, x, incx, result, detail::get_onemkl_index_base(base)));
+#ifdef APPLY_ONEMKL_2026_IAMIN_IAMAX_WORKAROUND
+    if (std::abs(incx) > 1) {
+        sycl_iamin_impl(queue, n, x, incx, result, base);
+    }
+    else {
+#endif
+        RETHROW_ONEMKL_EXCEPTIONS(
+            blas_major::iamin(queue, n, x, incx, result, detail::get_onemkl_index_base(base)));
+#ifdef APPLY_ONEMKL_2026_IAMIN_IAMAX_WORKAROUND
+    }
+#endif
 }
 
 // USM APIs
@@ -633,6 +898,11 @@ sycl::event swap(sycl::queue& queue, std::int64_t n, std::complex<double>* x, st
 sycl::event iamax(sycl::queue& queue, std::int64_t n, const float* x, std::int64_t incx,
                   std::int64_t* result, oneapi::math::index_base base,
                   const std::vector<sycl::event>& dependencies) {
+#ifdef APPLY_ONEMKL_2026_IAMIN_IAMAX_WORKAROUND
+    if (std::abs(incx) > 1) {
+        return sycl_iamax_usm_impl(queue, n, x, incx, result, base, dependencies);
+    }
+#endif
     RETHROW_ONEMKL_EXCEPTIONS_RET(blas_major::iamax(
         queue, n, x, incx, result, detail::get_onemkl_index_base(base), dependencies));
 }
@@ -640,6 +910,11 @@ sycl::event iamax(sycl::queue& queue, std::int64_t n, const float* x, std::int64
 sycl::event iamax(sycl::queue& queue, std::int64_t n, const double* x, std::int64_t incx,
                   std::int64_t* result, oneapi::math::index_base base,
                   const std::vector<sycl::event>& dependencies) {
+#ifdef APPLY_ONEMKL_2026_IAMIN_IAMAX_WORKAROUND
+    if (std::abs(incx) > 1) {
+        return sycl_iamax_usm_impl(queue, n, x, incx, result, base, dependencies);
+    }
+#endif
     RETHROW_ONEMKL_EXCEPTIONS_RET(blas_major::iamax(
         queue, n, x, incx, result, detail::get_onemkl_index_base(base), dependencies));
 }
@@ -647,6 +922,11 @@ sycl::event iamax(sycl::queue& queue, std::int64_t n, const double* x, std::int6
 sycl::event iamax(sycl::queue& queue, std::int64_t n, const std::complex<float>* x,
                   std::int64_t incx, std::int64_t* result, oneapi::math::index_base base,
                   const std::vector<sycl::event>& dependencies) {
+#ifdef APPLY_ONEMKL_2026_IAMIN_IAMAX_WORKAROUND
+    if (std::abs(incx) > 1) {
+        return sycl_iamax_usm_impl(queue, n, x, incx, result, base, dependencies);
+    }
+#endif
     RETHROW_ONEMKL_EXCEPTIONS_RET(blas_major::iamax(
         queue, n, x, incx, result, detail::get_onemkl_index_base(base), dependencies));
 }
@@ -654,6 +934,11 @@ sycl::event iamax(sycl::queue& queue, std::int64_t n, const std::complex<float>*
 sycl::event iamax(sycl::queue& queue, std::int64_t n, const std::complex<double>* x,
                   std::int64_t incx, std::int64_t* result, oneapi::math::index_base base,
                   const std::vector<sycl::event>& dependencies) {
+#ifdef APPLY_ONEMKL_2026_IAMIN_IAMAX_WORKAROUND
+    if (std::abs(incx) > 1) {
+        return sycl_iamax_usm_impl(queue, n, x, incx, result, base, dependencies);
+    }
+#endif
     RETHROW_ONEMKL_EXCEPTIONS_RET(blas_major::iamax(
         queue, n, x, incx, result, detail::get_onemkl_index_base(base), dependencies));
 }
@@ -661,6 +946,11 @@ sycl::event iamax(sycl::queue& queue, std::int64_t n, const std::complex<double>
 sycl::event iamin(sycl::queue& queue, std::int64_t n, const float* x, std::int64_t incx,
                   std::int64_t* result, oneapi::math::index_base base,
                   const std::vector<sycl::event>& dependencies) {
+#ifdef APPLY_ONEMKL_2026_IAMIN_IAMAX_WORKAROUND
+    if (std::abs(incx) > 1) {
+        return sycl_iamin_usm_impl(queue, n, x, incx, result, base, dependencies);
+    }
+#endif
     RETHROW_ONEMKL_EXCEPTIONS_RET(blas_major::iamin(
         queue, n, x, incx, result, detail::get_onemkl_index_base(base), dependencies));
 }
@@ -668,6 +958,11 @@ sycl::event iamin(sycl::queue& queue, std::int64_t n, const float* x, std::int64
 sycl::event iamin(sycl::queue& queue, std::int64_t n, const double* x, std::int64_t incx,
                   std::int64_t* result, oneapi::math::index_base base,
                   const std::vector<sycl::event>& dependencies) {
+#ifdef APPLY_ONEMKL_2026_IAMIN_IAMAX_WORKAROUND
+    if (std::abs(incx) > 1) {
+        return sycl_iamin_usm_impl(queue, n, x, incx, result, base, dependencies);
+    }
+#endif
     RETHROW_ONEMKL_EXCEPTIONS_RET(blas_major::iamin(
         queue, n, x, incx, result, detail::get_onemkl_index_base(base), dependencies));
 }
@@ -675,6 +970,11 @@ sycl::event iamin(sycl::queue& queue, std::int64_t n, const double* x, std::int6
 sycl::event iamin(sycl::queue& queue, std::int64_t n, const std::complex<float>* x,
                   std::int64_t incx, std::int64_t* result, oneapi::math::index_base base,
                   const std::vector<sycl::event>& dependencies) {
+#ifdef APPLY_ONEMKL_2026_IAMIN_IAMAX_WORKAROUND
+    if (std::abs(incx) > 1) {
+        return sycl_iamin_usm_impl(queue, n, x, incx, result, base, dependencies);
+    }
+#endif
     RETHROW_ONEMKL_EXCEPTIONS_RET(blas_major::iamin(
         queue, n, x, incx, result, detail::get_onemkl_index_base(base), dependencies));
 }
@@ -682,6 +982,11 @@ sycl::event iamin(sycl::queue& queue, std::int64_t n, const std::complex<float>*
 sycl::event iamin(sycl::queue& queue, std::int64_t n, const std::complex<double>* x,
                   std::int64_t incx, std::int64_t* result, oneapi::math::index_base base,
                   const std::vector<sycl::event>& dependencies) {
+#ifdef APPLY_ONEMKL_2026_IAMIN_IAMAX_WORKAROUND
+    if (std::abs(incx) > 1) {
+        return sycl_iamin_usm_impl(queue, n, x, incx, result, base, dependencies);
+    }
+#endif
     RETHROW_ONEMKL_EXCEPTIONS_RET(blas_major::iamin(
         queue, n, x, incx, result, detail::get_onemkl_index_base(base), dependencies));
 }
